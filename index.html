@@ -1,0 +1,4318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安全测试中心 - VIP授权</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: 'Microsoft YaHei', sans-serif;
+            perspective: 1000px;
+        }
+
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+            transition: filter 0.5s ease;
+            filter: blur(8px);
+        }
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 2s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .page {
+            display: none;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            flex-direction: column;
+            padding: 30px 20px;
+        }
+        .page.active {
+            display: flex;
+        }
+
+        .title {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-shadow: 0 0 30px rgba(100, 200, 255, 0.8);
+            letter-spacing: 8px;
+            background: linear-gradient(90deg, #64c8ff, #a855f7, #64c8ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .btn {
+            padding: 18px 24px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #e0e0e0;
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.85), rgba(20, 20, 40, 0.95));
+            border: 2px solid rgba(100, 200, 255, 0.4);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s;
+            backdrop-filter: blur(12px);
+            min-width: 120px;
+        }
+        .btn:hover {
+            background: linear-gradient(145deg, rgba(66, 78, 255, 0.5), rgba(138, 43, 226, 0.5));
+            border-color: rgba(100, 200, 255, 0.8);
+            transform: translateY(-5px) scale(1.08);
+            box-shadow: 0 10px 40px rgba(100, 200, 255, 0.3);
+        }
+        .btn-vip {
+            border-color: #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        .vip-balance {
+            margin-top: 30px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 12px rgba(0,255,136,0.2);
+            max-width:500px;
+            margin-left:auto;
+            margin-right:auto;
+        }
+
+        .system-progress-box {
+            margin-top: 12px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 12px rgba(0,255,136,0.2);
+            max-width:500px;
+            margin-left:auto;
+            margin-right:auto;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .system-progress-box:hover{
+            background:rgba(0,255,136,0.15);
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: #111;
+            border-radius: 5px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #00ff88;
+            border-radius: 5px;
+            animation: progressAnim 3s linear forwards;
+        }
+        @keyframes progressAnim {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .vip-title {
+            font-size: 2.4rem;
+            letter-spacing: 6px;
+            background: linear-gradient(90deg,#ffd700,#ffec8b,#ffd700);
+            background-size: 200% auto;
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            animation: shimmer 3s linear infinite;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .vip-desc {
+            color: #fff;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            text-align: center;
+            max-width: 600px;
+            margin:0 auto 25px;
+        }
+        .pay-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .pay-btn {
+            width: 170px;
+            padding: 18px 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 12px;
+            border: 2px solid rgba(255,215,0,0.6);
+            background: linear-gradient(145deg,rgba(35,35,55,0.8),rgba(22,22,42,0.9));
+            color: #fff;
+            cursor: pointer;
+            transition: 0.35s ease;
+            backdrop-filter: blur(8px);
+        }
+        .pay-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 0 30px rgba(255,215,0,0.4);
+        }
+
+        .verify-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0 25px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .verify-input {
+            padding: 12px 16px;
+            width: 280px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 2px solid #00ff88;
+            background: #111;
+            color: #fff;
+            outline: none;
+            text-align: center;
+        }
+        .verify-btn {
+            padding: 12px 22px;
+            border-radius: 8px;
+            border: 2px solid #00ff88;
+            background: transparent;
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 8px #00ff88;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 0 10px rgba(0,255,136,0.3);
+        }
+        .verify-btn:hover {
+            background: rgba(0,255,136,0.1);
+        }
+
+        .back-btn {
+            padding: 12px 30px;
+            border: 1px solid #64c8ff;
+            background: transparent;
+            color: #64c8ff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .back-btn:hover {
+            background: rgba(100,200,255,0.1);
+        }
+
+        .sub-top-title{
+            text-align:center;
+            font-size:2.3rem;
+            color:#ffffff;
+            margin-bottom:12px;
+        }
+        .sub-sub-title{
+            text-align:center;
+            font-size:1.15rem;
+            color:#b8b8b8;
+            margin-bottom:60px;
+        }
+
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .login-overlay.hidden {
+            display: none;
+        }
+        .login-box {
+            width: 360px;
+            background: linear-gradient(145deg, rgba(30,30,50,0.95), rgba(20,20,40,0.98));
+            border: 2px solid #00ff88;
+            border-radius: 20px;
+            padding: 35px;
+        }
+        
+        .unlock-dots {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .unlock-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .unlock-dot::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .dot-red {
+            background: radial-gradient(circle, #ff4757, #c0392b);
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.8), 0 0 30px rgba(255, 71, 87, 0.5);
+        }
+        
+        .dot-red::after {
+            background: rgba(255, 71, 87, 0.3);
+        }
+        
+        .dot-green {
+            background: radial-gradient(circle, #2ed573, #1e90ff);
+            box-shadow: 0 0 15px rgba(46, 213, 115, 0.8), 0 0 30px rgba(46, 213, 115, 0.5);
+        }
+        
+        .dot-green::after {
+            background: rgba(46, 213, 115, 0.3);
+        }
+        
+        .dot-yellow {
+            background: radial-gradient(circle, #ffa502, #ff6b35);
+            box-shadow: 0 0 15px rgba(255, 165, 2, 0.8), 0 0 30px rgba(255, 165, 2, 0.5);
+        }
+        
+        .dot-yellow::after {
+            background: rgba(255, 165, 2, 0.3);
+        }
+        
+        .unlock-dot:hover {
+            transform: scale(1.2);
+        }
+        
+        .unlock-dot.active {
+            transform: scale(1.3);
+            box-shadow: 0 0 25px currentColor, 0 0 50px currentColor;
+        }
+        
+        .unlock-dot.wrong {
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .ambient-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .ambient-particle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(100, 200, 255, 0.8), rgba(168, 85, 247, 0.4));
+            animation: ambientFloat linear infinite;
+            box-shadow: 0 0 10px rgba(100, 200, 255, 0.6);
+        }
+        
+        @keyframes ambientFloat {
+            0% {
+                transform: translateY(100%) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100%) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .login-title {
+            text-align: center;
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #64c8ff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            background: rgba(15,15,30,0.8);
+            border: 1.5px solid rgba(100,200,255,0.3);
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(145deg, rgba(66,78,255,0.7), rgba(138,43,226,0.7));
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .password-hint {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 5px;
+        }
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .vip-prompt-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .vip-prompt-overlay.show {
+            display: flex;
+        }
+        .vip-prompt-box {
+            width: 320px;
+            background: #151525;
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            color: #fff;
+        }
+        .vip-prompt-btn {
+            margin-top: 20px;
+            padding: 10px 25px;
+            background: #ffd700;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .pay-modal {
+            position: fixed;
+            top:0;left:0;
+            width:100%;height:100%;
+            background:rgba(0,0,0,0.85);
+            z-index:300;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            backdrop-filter:blur(4px);
+        }
+        .pay-modal.open{
+            display:flex;
+        }
+        .modal-content{
+            width:340px;
+            background:#141422;
+            border:2px solid #ffd700;
+            border-radius:14px;
+            padding:30px;
+            text-align:center;
+            color:#fff;
+        }
+        .bank-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .bank-text {
+            font-size: 14px;
+            color: #fff;
+            word-break: break-all;
+        }
+        .copy-btn {
+            padding: 6px 16px;
+            background: linear-gradient(145deg, #4a90d9, #357abd);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            background: linear-gradient(145deg, #5a9fe9, #4589cd);
+            transform: scale(1.02);
+        }
+        .copy-btn:active {
+            transform: scale(0.98);
+        }
+        .small-qrcode-box {
+            width: 140px;
+            height: 140px;
+            margin: 10px auto;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #1677ff;
+        }
+        .small-qrcode-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .qrcode-box{
+            width:180px;
+            height:180px;
+            margin:15px auto;
+            background:#fff;
+            border-radius:8px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:#222;
+            font-weight:bold;
+            font-size:14px;
+        }
+        .close-pay{
+            margin-top:22px;
+            padding:9px 26px;
+            border:none;
+            border-radius:8px;
+            background:#ffd700;
+            color:#000;
+            font-weight:bold;
+            cursor:pointer;
+        }
+        .info-text{
+            margin:8px 0;
+            line-height:1.7;
+        }
+
+        .toast{
+            position:fixed;
+            top:30px;
+            left:50%;
+            transform:translateX(-50%);
+            padding:12px 26px;
+            border-radius:8px;
+            font-size:16px;
+            font-weight:bold;
+            z-index:9999;
+            display:none;
+        }
+        .toast.success{
+            background:#00bb55;
+            color:#fff;
+            box-shadow:0 0 15px #00ff88;
+        }
+        .toast.fail{
+            background:#bb3333;
+            color:#fff;
+            box-shadow:0 0 15px #ff4444;
+        }
+
+        #page8{
+            justify-content: space-between;
+            overflow:hidden;
+        }
+        .scan-wrap{
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            position:relative;
+        }
+        .center-circle{
+            width:160px;
+            height:160px;
+            border-radius:50%;
+            border:3px solid #0cf;
+            background:radial-gradient(circle at 30% 30%, rgba(100,200,255,0.15), rgba(0,0,0,0.9));
+            color:#0cf;
+            font-size:18px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 0 35px #0cf;
+            cursor:pointer;
+            position:relative;
+            z-index:2;
+            transition: all 0.3s ease;
+        }
+        .center-circle.scanning{
+            border-color: #0f0;
+            box-shadow: 
+                0 0 20px rgba(0,255,136,0.6),
+                0 0 40px rgba(0,255,136,0.4),
+                0 0 60px rgba(100,200,255,0.3),
+                inset 0 0 30px rgba(0,255,136,0.1);
+            animation: breathing 2s ease-in-out infinite;
+        }
+        @keyframes breathing {
+            0%,100% { 
+                border-color: #0f0;
+                box-shadow: 
+                    0 0 20px rgba(0,255,136,0.4),
+                    0 0 40px rgba(0,255,136,0.2),
+                    0 0 60px rgba(100,200,255,0.15);
+            }
+            50% { 
+                border-color: #0cf;
+                box-shadow: 
+                    0 0 30px rgba(0,255,136,0.8),
+                    0 0 60px rgba(100,200,255,0.6),
+                    0 0 80px rgba(100,200,255,0.4),
+                    inset 0 0 40px rgba(0,255,136,0.15);
+            }
+        }
+
+        .outer-dots-container {
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            animation: rotateAntiClock 10s linear infinite;
+        }
+        @keyframes rotateAntiClock {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+        .outer-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, #00ff88, #40d9ff);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            margin-left: -4px;
+            margin-top: -4px;
+            box-shadow: 
+                0 0 12px rgba(0, 255, 136, 0.8),
+                0 0 24px rgba(64, 217, 255, 0.6),
+                0 0 36px rgba(64, 217, 255, 0.4);
+        }
+
+        .inner-dots-container {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            animation: rotateClock 6s linear infinite;
+        }
+        @keyframes rotateClock {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .inner-dot {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: linear-gradient(135deg, #ffd700, #00ff88);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            margin-left: -2.5px;
+            margin-top: -2.5px;
+            box-shadow: 
+                0 0 8px rgba(255, 215, 0, 0.8),
+                0 0 16px rgba(0, 255, 136, 0.5);
+        }
+
+        .rising-numbers-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .rising-number {
+            position: absolute;
+            font-weight: bold;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 136, 0.9),
+                0 0 20px rgba(0, 255, 136, 0.7),
+                0 0 30px rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+            animation: rise linear forwards;
+        }
+
+        .rising-number.large {
+            font-size: 2.5rem;
+            animation: riseLarge linear forwards;
+        }
+
+        .rising-number.small {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        @keyframes rise {
+            from {
+                transform: translateY(100vh) rotate(0deg) scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-100px) rotate(360deg) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        @keyframes riseLarge {
+            from {
+                transform: translateY(100vh) rotate(0deg) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            70% {
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-150px) rotate(360deg) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        .vertical-line {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to top, 
+                rgba(0, 255, 136, 0),
+                rgba(0, 255, 136, 0.3),
+                rgba(0, 255, 136, 0.6),
+                rgba(0, 255, 136, 0.3),
+                rgba(0, 255, 136, 0));
+            animation: linePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes linePulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        .permissions-container {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .permission-option {
+            width: 280px;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .permission-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            transition: left 0.5s ease;
+        }
+
+        .permission-option:hover::before {
+            left: 100%;
+        }
+
+        .option-more {
+            background: linear-gradient(145deg, rgba(66, 78, 255, 0.3), rgba(138, 43, 226, 0.3));
+            border: 2px solid rgba(66, 78, 255, 0.6);
+            color: #818cf8;
+            box-shadow: 0 0 20px rgba(66, 78, 255, 0.3);
+        }
+
+        .option-more::before {
+            background: linear-gradient(90deg, transparent, rgba(66, 78, 255, 0.2), transparent);
+        }
+
+        .option-more:hover {
+            background: linear-gradient(145deg, rgba(66, 78, 255, 0.5), rgba(138, 43, 226, 0.5));
+            box-shadow: 0 0 30px rgba(66, 78, 255, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .option-special {
+            background: linear-gradient(145deg, rgba(255, 159, 67, 0.3), rgba(255, 215, 0, 0.3));
+            border: 2px solid rgba(255, 159, 67, 0.6);
+            color: #fbbf24;
+            box-shadow: 0 0 20px rgba(255, 159, 67, 0.3);
+        }
+
+        .option-special::before {
+            background: linear-gradient(90deg, transparent, rgba(255, 159, 67, 0.2), transparent);
+        }
+
+        .option-special:hover {
+            background: linear-gradient(145deg, rgba(255, 159, 67, 0.5), rgba(255, 215, 0, 0.5));
+            box-shadow: 0 0 30px rgba(255, 159, 67, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .option-change {
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.3), rgba(64, 217, 255, 0.3));
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            color: #34d399;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .option-change::before {
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.2), transparent);
+        }
+
+        .option-change:hover {
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.5), rgba(64, 217, 255, 0.5));
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            transform: translateY(-3px);
+        }
+
+        .option-icon {
+            font-size: 1.5rem;
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        .option-more .option-icon {
+            animation-delay: 0s;
+        }
+
+        .option-special .option-icon {
+            animation-delay: 0.7s;
+        }
+
+        .option-change .option-icon {
+            animation-delay: 1.4s;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .effect-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            animation: particleExplode linear forwards;
+        }
+
+        @keyframes particleExplode {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .effect-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0;
+            animation: flashEffect 0.3s ease-out;
+        }
+
+        @keyframes flashEffect {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .result-message {
+            display: none;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+            animation: messageSlideIn 0.5s ease;
+        }
+
+        @keyframes messageSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .cleaning-container {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .outer-dots-container-memory {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            animation: rotateMemoryClock 10s linear infinite;
+        }
+        @keyframes rotateMemoryClock {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .outer-dot-memory {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: linear-gradient(135deg, #40d9ff, #00ff88);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            margin-left: -3px;
+            margin-top: -3px;
+            box-shadow: 0 0 10px rgba(64, 217, 255, 0.8);
+        }
+
+        .inner-dots-container-memory {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            animation: rotateMemoryAntiClock 8s linear infinite;
+        }
+        @keyframes rotateMemoryAntiClock {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-360deg); }
+        }
+        .inner-dot-memory {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: linear-gradient(135deg, #ffd700, #40d9ff);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            margin-left: -2px;
+            margin-top: -2px;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+        }
+
+        .rotating-circle {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .clean-text {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #40d9ff;
+            text-shadow: 
+                0 0 10px rgba(64, 217, 255, 0.8),
+                0 0 20px rgba(64, 217, 255, 0.6),
+                0 0 30px rgba(64, 217, 255, 0.4);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .circle-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(64, 217, 255, 0.3);
+            border-radius: 50%;
+            animation: rotateRing 3s linear infinite;
+        }
+
+        .circle-ring-inner {
+            position: absolute;
+            width: 85%;
+            height: 85%;
+            border: 2px solid rgba(64, 217, 255, 0.5);
+            border-radius: 50%;
+            animation: rotateRingInner 4s linear infinite reverse;
+        }
+
+        @keyframes rotateRing {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes rotateRingInner {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .scan-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .scan-lines::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(64, 217, 255, 0), rgba(64, 217, 255, 0.8));
+            transform-origin: bottom center;
+            animation: scanLine 2s linear infinite;
+        }
+
+        @keyframes scanLine {
+            from { transform: translateX(-50%) rotate(0deg); }
+            to { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        .rotating-circle.active {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .progress-container {
+            width: 80%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(64, 217, 255, 0.3);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #40d9ff, #00ff88);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(64, 217, 255, 0.8);
+        }
+
+        .progress-text {
+            font-size: 1.2rem;
+            color: #40d9ff;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(64, 217, 255, 0.8);
+        }
+
+        .complete-box {
+            display: none;
+            padding: 25px 40px;
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 136, 0.05));
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .complete-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #00ff88, #40d9ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+        }
+
+        .complete-title {
+            font-size: 1.4rem;
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+            margin-bottom: 5px;
+        }
+
+        .complete-subtitle {
+            font-size: 1.1rem;
+            color: #00cc6a;
+        }
+
+        .clean-btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(145deg, rgba(64, 217, 255, 0.7), rgba(0, 255, 136, 0.7));
+            border: 2px solid rgba(64, 217, 255, 0.5);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(64, 217, 255, 0.4);
+        }
+
+        .clean-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(64, 217, 255, 0.6);
+        }
+
+        .clean-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .virus-container {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .circles-wrapper {
+            position: relative;
+            width: 220px;
+            height: 220px;
+        }
+
+        .red-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .red-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 68, 68, 0.3);
+            border-radius: 50%;
+            animation: redRotate 4s linear infinite;
+        }
+
+        @keyframes redRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .red-pulse {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border: 2px solid rgba(255, 68, 68, 0.6);
+            border-radius: 50%;
+            animation: redPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes redPulse {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 0.6;
+                box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+            }
+            50% { 
+                transform: scale(1.1);
+                opacity: 1;
+                box-shadow: 0 0 40px rgba(255, 68, 68, 0.8);
+            }
+        }
+
+        .green-circle {
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .green-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(0, 255, 136, 0.4);
+            border-radius: 50%;
+            animation: greenRotate 3s linear infinite reverse;
+        }
+
+        @keyframes greenRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .green-scan {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .green-scan::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 3px;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(0, 255, 136, 0), rgba(0, 255, 136, 0.9));
+            transform-origin: bottom center;
+            animation: greenScan 1.5s linear infinite;
+        }
+
+        @keyframes greenScan {
+            from { transform: translateX(-50%) rotate(0deg); }
+            to { transform: translateX(-50%) rotate(360deg); }
+        }
+
+        .virus-progress-container {
+            width: 80%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .virus-progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-label {
+            font-size: 0.95rem;
+            color: #aaa;
+            text-align: left;
+        }
+
+        .progress-bar-bg-red {
+            width: 100%;
+            height: 12px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .progress-bar-red {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff4444, #ff6b6b);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+        }
+
+        .progress-bar-bg-green {
+            width: 100%;
+            height: 12px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .progress-bar-green {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff88, #4ade80);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+        }
+
+        .progress-num {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #40d9ff;
+            text-align: right;
+        }
+
+        .virus-complete-box {
+            display: none;
+            padding: 25px 45px;
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.12), rgba(0, 255, 136, 0.05));
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(0, 255, 136, 0.35);
+            animation: virusFadeIn 0.5s ease;
+        }
+
+        @keyframes virusFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .virus-complete-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #00ff88, #4ade80);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.7);
+        }
+
+        .virus-complete-text {
+            font-size: 1.25rem;
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.8);
+        }
+
+        .virus-btn {
+            padding: 15px 45px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(145deg, rgba(255, 68, 68, 0.7), rgba(255, 107, 107, 0.7));
+            border: 2px solid rgba(255, 68, 68, 0.5);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+        }
+
+        .virus-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.6);
+        }
+
+        .virus-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .permission-container {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .square-box {
+            width: 200px;
+            height: 200px;
+            border: 3px solid rgba(138, 43, 226, 0.6);
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(138, 43, 226, 0.08);
+            box-shadow: 
+                0 0 20px rgba(138, 43, 226, 0.3),
+                inset 0 0 20px rgba(138, 43, 226, 0.1);
+        }
+
+        .ring-outer {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 2px solid rgba(255, 215, 0, 0.7);
+            border-radius: 50%;
+            animation: ringOuterRotate 4s linear infinite;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        @keyframes ringOuterRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+
+        .ring-inner {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(138, 43, 226, 0.7);
+            border-radius: 50%;
+            animation: ringInnerRotate 3s linear infinite;
+            box-shadow: 0 0 12px rgba(138, 43, 226, 0.5);
+        }
+
+        @keyframes ringInnerRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-bottom: 70px solid #8a2be2;
+            position: absolute;
+            animation: triangleMove 3s ease-in-out infinite;
+        }
+
+        .triangle.active {
+            border-bottom-color: #00ff88;
+            animation: triangleMoveActive 3s ease-in-out infinite;
+        }
+
+        @keyframes triangleMove {
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0.8;
+            }
+            25% { 
+                transform: translate(30px, -20px) rotate(45deg);
+                opacity: 1;
+            }
+            50% { 
+                transform: translate(-20px, 30px) rotate(90deg);
+                opacity: 0.8;
+            }
+            75% { 
+                transform: translate(20px, 20px) rotate(135deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes triangleMoveActive {
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0.6;
+            }
+            25% { 
+                transform: translate(25px, -15px) rotate(30deg);
+                opacity: 1;
+            }
+            50% { 
+                transform: translate(-15px, 25px) rotate(60deg);
+                opacity: 0.6;
+            }
+            75% { 
+                transform: translate(15px, 15px) rotate(90deg);
+                opacity: 1;
+            }
+        }
+
+        .permission-status {
+            font-size: 1.1rem;
+            color: #8a2be2;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.6);
+        }
+
+        .permission-progress-container {
+            width: 80%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .permission-progress-bg {
+            width: 100%;
+            height: 12px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+        }
+
+        .permission-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #8a2be2, #da70d6);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+        }
+
+        .permission-progress-num {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #8a2be2;
+            text-align: right;
+        }
+
+        .permission-complete-box {
+            display: none;
+            padding: 25px 40px;
+            background: linear-gradient(145deg, rgba(138, 43, 226, 0.15), rgba(138, 43, 226, 0.08));
+            border: 2px solid rgba(138, 43, 226, 0.6);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(138, 43, 226, 0.35);
+            animation: permissionFadeIn 0.5s ease;
+        }
+
+        @keyframes permissionFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .permission-complete-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #8a2be2, #da70d6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.7);
+        }
+
+        .permission-complete-text {
+            font-size: 1.15rem;
+            color: #da70d6;
+            font-weight: bold;
+            text-shadow: 0 0 12px rgba(138, 43, 226, 0.8);
+        }
+
+        .permission-btn {
+            padding: 14px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(145deg, rgba(138, 43, 226, 0.7), rgba(218, 112, 214, 0.7));
+            border: 2px solid rgba(138, 43, 226, 0.5);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+        }
+
+        .permission-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.6);
+        }
+
+        .permission-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .battery-container {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .battery-icons {
+            display: flex;
+            gap: 35px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .battery-icon-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .battery-charging, .battery-lightning {
+            width: 70px;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 12px;
+            background: rgba(0, 255, 136, 0.08);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .battery-body {
+            width: 40px;
+            height: 50px;
+            border: 2px solid #00ff88;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .battery-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, #00ff88, #4ade80);
+            transition: height 0.5s ease;
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 2px;
+        }
+
+        .battery-level::after {
+            content: '';
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+
+        .battery-fill {
+            width: 100%;
+            height: 85%;
+            background: linear-gradient(to top, #00ff88, #86efac);
+            margin-top: 3px;
+        }
+
+        .battery-cap {
+            width: 15px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 0 0 3px 3px;
+            margin-top: -2px;
+        }
+
+        .battery-lightning {
+            position: relative;
+        }
+
+        .lightning {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 16px;
+            animation: flash 1.5s ease-in-out infinite;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .battery-discharge {
+            width: 70px;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px;
+            border: 2px dashed rgba(255, 215, 0, 0.5);
+            border-radius: 12px;
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .battery-cell {
+            width: 35px;
+            height: 25px;
+            border: 2px solid #ffd700;
+            border-radius: 4px;
+            position: relative;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .battery-cell::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 5px;
+            background: #ffd700;
+            border-radius: 0 0 2px 2px;
+        }
+
+        .icon-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 500;
+        }
+
+        .battery-progress-container {
+            width: 80%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .battery-progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .battery-progress-label {
+            font-size: 0.9rem;
+            color: #00ff88;
+            text-align: left;
+        }
+
+        .battery-progress-bg {
+            width: 100%;
+            height: 12px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .battery-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff88, #4ade80);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+        }
+
+        .battery-progress-num {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #00ff88;
+            text-align: right;
+        }
+
+        .battery-complete-box {
+            display: none;
+            padding: 25px 45px;
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.12), rgba(0, 255, 136, 0.05));
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(0, 255, 136, 0.35);
+            animation: batteryFadeIn 0.5s ease;
+        }
+
+        @keyframes batteryFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .battery-complete-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #00ff88, #4ade80);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.7);
+        }
+
+        .battery-complete-text {
+            font-size: 1.25rem;
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.8);
+        }
+
+        .battery-btn {
+            padding: 15px 45px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.7), rgba(74, 222, 128, 0.7));
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .battery-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+        }
+
+        .battery-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .restore-container {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .restore-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .square-frame {
+            width: 180px;
+            height: 180px;
+            border: 3px solid #40d9ff;
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(64, 217, 255, 0.08);
+            box-shadow: 
+                0 0 30px rgba(64, 217, 255, 0.3),
+                inset 0 0 30px rgba(64, 217, 255, 0.1);
+        }
+
+        .green-glow-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.15);
+            border: 3px solid rgba(0, 255, 136, 0.6);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.5),
+                inset 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .curved-lines-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .curved-line {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            animation: curvedRotate 4s linear infinite;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .curved-line.rev {
+            animation-direction: reverse;
+        }
+
+        .curved-line-1 { top: 5px; left: 5px; animation-delay: 0s; }
+        .curved-line-2 { top: 5px; right: 5px; animation-delay: 0.5s; }
+        .curved-line-3 { bottom: 5px; left: 5px; animation-delay: 1s; }
+        .curved-line-4 { bottom: 5px; right: 5px; animation-delay: 0s; }
+        .curved-line-5 { top: 50%; left: 5px; transform: translateY(-50%); animation-delay: 0.5s; }
+        .curved-line-6 { top: 50%; right: 5px; transform: translateY(-50%); animation-delay: 1s; }
+
+        @keyframes curvedRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .center-dot {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff3333 0%, #00ff88 100%);
+            animation: centerGlow 2s ease-in-out infinite;
+            box-shadow: 
+                0 0 15px rgba(255, 51, 51, 0.8),
+                0 0 30px rgba(0, 255, 136, 0.6);
+        }
+
+        .yellow-ring {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.8),
+                0 0 20px rgba(255, 215, 0, 0.4);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .yellow-ring.active {
+            box-shadow: 
+                0 0 15px rgba(255, 215, 0, 1),
+                0 0 30px rgba(255, 215, 0, 0.6),
+                0 0 45px rgba(255, 215, 0, 0.3);
+        }
+
+        .red-triangle {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 26px solid #ff4444;
+            transform-origin: center center;
+            box-shadow: 
+                0 0 10px rgba(255, 68, 68, 0.8),
+                0 0 20px rgba(255, 68, 68, 0.4);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .red-triangle.bouncing {
+            box-shadow: 
+                0 0 15px rgba(255, 68, 68, 1),
+                0 0 30px rgba(255, 68, 68, 0.6),
+                0 0 45px rgba(255, 68, 68, 0.3);
+        }
+
+        @keyframes centerGlow {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: 0.8;
+                box-shadow: 
+                    0 0 15px rgba(255, 51, 51, 0.8),
+                    0 0 30px rgba(0, 255, 136, 0.6);
+            }
+            50% { 
+                transform: scale(1.3); 
+                opacity: 1;
+                box-shadow: 
+                    0 0 25px rgba(255, 51, 51, 1),
+                    0 0 45px rgba(0, 255, 136, 0.8);
+            }
+        }
+
+        .restore-progress-container {
+            width: 80%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .restore-progress-bg {
+            width: 100%;
+            height: 14px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+        }
+
+        .restore-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #8a2be2, #da70d6, #9333ea);
+            border-radius: 7px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.8);
+        }
+
+        .restore-progress-num {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #8a2be2;
+            text-align: right;
+        }
+
+        .restore-complete-box {
+            display: none;
+            padding: 25px 45px;
+            background: linear-gradient(145deg, rgba(64, 217, 255, 0.15), rgba(64, 217, 255, 0.08));
+            border: 2px solid rgba(64, 217, 255, 0.6);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(64, 217, 255, 0.35);
+            animation: restoreFadeIn 0.5s ease;
+        }
+
+        @keyframes restoreFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .restore-complete-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #40d9ff, #06b6d4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 0 25px rgba(64, 217, 255, 0.7);
+        }
+
+        .restore-complete-text {
+            font-size: 1.15rem;
+            color: #40d9ff;
+            font-weight: bold;
+            text-shadow: 0 0 12px rgba(64, 217, 255, 0.8);
+        }
+
+        .restore-btn {
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(145deg, rgba(64, 217, 255, 0.7), rgba(6, 182, 212, 0.7));
+            border: 2px solid rgba(64, 217, 255, 0.5);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(64, 217, 255, 0.4);
+        }
+
+        .restore-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(64, 217, 255, 0.6);
+        }
+
+        .restore-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pay-protect-container {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 35px;
+        }
+
+        .green-square-box {
+            width: 220px;
+            height: 220px;
+            border: 3px solid #00ff88;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 255, 136, 0.08);
+            box-shadow: 
+                0 0 25px rgba(0, 255, 136, 0.3),
+                inset 0 0 25px rgba(0, 255, 136, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .triangle-item {
+            position: absolute;
+            width: 0;
+            height: 0;
+            transform-origin: center center;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .green-triangle {
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 35px solid #00ff88;
+            box-shadow: 
+                0 0 12px rgba(0, 255, 136, 0.9),
+                0 0 24px rgba(0, 255, 136, 0.6);
+        }
+
+        .yellow-triangle {
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 35px solid transparent;
+            border-bottom-color: transparent;
+            border: 2px solid #ffd700;
+            width: 30px;
+            height: 30px;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            box-shadow: 
+                0 0 12px rgba(255, 215, 0, 0.9),
+                0 0 24px rgba(255, 215, 0, 0.6);
+        }
+
+        .triangle-item.bouncing {
+            animation: bouncePulse 0.3s ease;
+        }
+
+        @keyframes bouncePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .protect-text {
+            font-size: 1.4rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .protect-text span {
+            display: inline-block;
+            animation: glowCycle 3s ease-in-out infinite;
+        }
+
+        .protect-text span:nth-child(1) {
+            color: #00ff88;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 136, 0.9),
+                0 0 20px rgba(0, 255, 136, 0.7),
+                0 0 30px rgba(0, 255, 136, 0.5);
+            animation-delay: 0s;
+        }
+
+        .protect-text span:nth-child(2) {
+            color: #40d9ff;
+            text-shadow: 
+                0 0 10px rgba(64, 217, 255, 0.9),
+                0 0 20px rgba(64, 217, 255, 0.7),
+                0 0 30px rgba(64, 217, 255, 0.5);
+            animation-delay: 0.3s;
+        }
+
+        .protect-text span:nth-child(3) {
+            color: #ffd700;
+            text-shadow: 
+                0 0 10px rgba(255, 215, 0, 0.9),
+                0 0 20px rgba(255, 215, 0, 0.7),
+                0 0 30px rgba(255, 215, 0, 0.5);
+            animation-delay: 0.6s;
+        }
+
+        .protect-text span:nth-child(4) {
+            color: #ff6b6b;
+            text-shadow: 
+                0 0 10px rgba(255, 107, 107, 0.9),
+                0 0 20px rgba(255, 107, 107, 0.7),
+                0 0 30px rgba(255, 107, 107, 0.5);
+            animation-delay: 0.9s;
+        }
+
+        .protect-text span:nth-child(5) {
+            color: #da70d6;
+            text-shadow: 
+                0 0 10px rgba(218, 112, 214, 0.9),
+                0 0 20px rgba(218, 112, 214, 0.7),
+                0 0 30px rgba(218, 112, 214, 0.5);
+            animation-delay: 1.2s;
+        }
+
+        .protect-text span:nth-child(6) {
+            color: #ff9f43;
+            text-shadow: 
+                0 0 10px rgba(255, 159, 67, 0.9),
+                0 0 20px rgba(255, 159, 67, 0.7),
+                0 0 30px rgba(255, 159, 67, 0.5);
+            animation-delay: 1.5s;
+        }
+
+        @keyframes glowCycle {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                transform: scale(1.1);
+                filter: brightness(1.3);
+            }
+        }
+
+        .cubes-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .cube-item {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .cube-item.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+        }
+
+        .cube-1 { background: linear-gradient(145deg, #00ff88, #4ade80); }
+        .cube-2 { background: linear-gradient(145deg, #00ff88, #86efac); }
+        .cube-3 { background: linear-gradient(145deg, #ff4444, #f87171); }
+        .cube-4 { background: linear-gradient(145deg, #ff6b6b, #fca5a5); }
+        .cube-5 { background: linear-gradient(145deg, #ffffff, #e5e7eb); }
+        .cube-6 { background: linear-gradient(145deg, #e5e7eb, #d1d5db); }
+        .cube-7 { background: linear-gradient(145deg, #ff4444, #f87171); }
+        .cube-8 { background: linear-gradient(145deg, #ff6b6b, #fca5a5); }
+        .cube-9 { background: linear-gradient(145deg, #ff4444, #f87171); }
+
+        .pay-protect-btn {
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.7), rgba(74, 222, 128, 0.7));
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .pay-protect-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+        }
+
+        .pay-protect-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .falling-numbers-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1000;
+            display: none;
+        }
+
+        .falling-numbers-container.active {
+            display: block;
+        }
+
+        .falling-number {
+            position: absolute;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 
+                0 0 10px rgba(0, 255, 136, 0.8),
+                0 0 20px rgba(0, 255, 136, 0.6);
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            from {
+                transform: translateY(-50px) rotate(0deg);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .pay-protect-progress-container {
+            width: 80%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pay-protect-progress-bg {
+            width: 100%;
+            height: 14px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 7px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+        }
+
+        .pay-protect-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff88, #4ade80, #86efac);
+            border-radius: 7px;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+        }
+
+        .pay-protect-progress-num {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #00ff88;
+            text-align: right;
+        }
+
+        .pay-protect-complete-box {
+            display: none;
+            padding: 25px 45px;
+            background: linear-gradient(145deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.08));
+            border: 2px solid rgba(0, 255, 136, 0.6);
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(0, 255, 136, 0.35);
+            animation: payProtectFadeIn 0.5s ease;
+        }
+
+        @keyframes payProtectFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pay-protect-complete-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 15px;
+            background: linear-gradient(135deg, #00ff88, #4ade80);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #000;
+            font-weight: bold;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.7);
+        }
+
+        .pay-protect-complete-text {
+            font-size: 1.25rem;
+            color: #00ff88;
+            font-weight: bold;
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.8);
+        }
+
+        .rotate-rings-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .rotate-ring {
+            position: absolute;
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .outer-ring {
+            width: 140px;
+            height: 140px;
+            margin-left: -70px;
+            margin-top: -70px;
+            animation: rotateClockwise 8s linear infinite;
+            border-color: #ffd700;
+            box-shadow: 
+                0 0 15px rgba(255, 215, 0, 0.6),
+                inset 0 0 15px rgba(255, 215, 0, 0.2);
+        }
+
+        .inner-ring {
+            width: 90px;
+            height: 90px;
+            margin-left: -45px;
+            margin-top: -45px;
+            animation: rotateClockwise 5s linear infinite;
+            border-color: #ffec8b;
+            box-shadow: 
+                0 0 10px rgba(255, 236, 139, 0.5),
+                inset 0 0 10px rgba(255, 236, 139, 0.15);
+        }
+
+        @keyframes rotateClockwise {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-group{
+            width:90%;
+            max-width:520px;
+            margin-top:40px;
+        }
+        .prog-item{
+            margin:16px 0;
+        }
+        .prog-txt{
+            color:#fff;
+            margin-bottom:6px;
+        }
+        .prog-bg{
+            width:100%;
+            height:12px;
+            background:#191919;
+            border-radius:6px;
+            overflow:hidden;
+        }
+        .prog-inner1{
+            height:100%;
+            width:0%;
+            background:#40d9ff;
+        }
+        .prog-inner2{
+            height:100%;
+            width:0%;
+            background:#28dd77;
+        }
+        .prog-inner3{
+            height:100%;
+            width:0%;
+            background:#ddbb22;
+        }
+        .result-pop{
+            display:none;
+            margin:30px auto;
+            padding:14px 30px;
+            color:#00ff88;
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius:8px;
+            box-shadow:0 0 12px #00ff8844;
+            font-size:18px;
+        }
+
+        @media (max-width:700px) {
+            .buttons-grid { grid-template-columns: repeat(2,1fr); }
+        }
+        @media (max-width:420px) {
+            .buttons-grid { grid-template-columns: 1fr; }
+            .vip-title { font-size: 1.8rem; }
+            .center-circle{width:130px;height:130px;}
+            .outer-ring-wrap{width:156px;height:156px;}
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stars-container" id="starsContainer"></div>
+    <div class="toast" id="toastBox"></div>
+
+    <div class="page active" id="page0">
+        <div style="text-align:center">
+            <h1 class="title">安全测试中心</h1>
+            <div class="buttons-grid">
+                <button class="btn btn-vip" onclick="playButtonSound('vip'); switchPage('vipPay')">VIP授权验证</button>
+                <button class="btn" onclick="playButtonSound('clean'); checkGo(1)">清理内存</button>
+                <button class="btn" onclick="playButtonSound('virus'); checkGo(2)">病毒查杀</button>
+                <button class="btn" onclick="playButtonSound('pay'); checkGo(3)">支付保护</button>
+                <button class="btn" onclick="playButtonSound('restore'); checkGo(4)">恢复应用</button>
+                <button class="btn" onclick="playButtonSound('battery'); checkGo(5)">电池修复</button>
+                <button class="btn" onclick="playButtonSound('install'); checkGo(6)">安装权限</button>
+                <button class="btn" onclick="playButtonSound('more'); checkGo(7)">更多权限</button>
+            </div>
+
+            <div class="vip-balance">
+                <span>✓</span> 本次VIP可用额度为 <span id="num">0</span> 次
+            </div>
+
+            <div class="system-progress-box" onclick="checkGo(8)">
+                <div>系统安全检测中</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="vipPay">
+        <div style="text-align:center">
+            <h1 class="vip-title">VIP通道渠道说明专属</h1>
+            <div class="vip-desc">
+                请支付金额，仅支付金额获取VIP授权额度<br>
+                使用专属通道应用初期10元测试体验一次，后期30元一次，50元两次
+            </div>
+            <div class="pay-group">
+                <button class="pay-btn" onclick="openWx()">微信支付</button>
+                <button class="pay-btn" onclick="openAlipay()">支付宝支付</button>
+                <button class="pay-btn" onclick="openBank()">银行卡支付</button>
+            </div>
+            <div class="verify-group">
+                <input type="text" class="verify-input" id="verifyCode" placeholder="请输入验证密码">
+                <button class="verify-btn" onclick="checkVerify()">验证额度</button>
+            </div>
+            <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回安全中心</button>
+        </div>
+    </div>
+
+    <div class="page" id="page1">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【1】清理内存专属页面</div>
+            <div class="sub-sub-title">系统缓存、垃圾文件一键清理功能专区</div>
+            
+            <div class="cleaning-container">
+                <div class="outer-dots-container-memory" id="outerDotsMemory"></div>
+                <div class="inner-dots-container-memory" id="innerDotsMemory"></div>
+                <div class="rotating-circle" id="rotatingCircle">
+                    <div class="circle-ring"></div>
+                    <div class="circle-ring-inner"></div>
+                    <div class="scan-lines"></div>
+                    <div class="clean-text">清理</div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="cleanProgress"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                
+                <div class="complete-box" id="completeBox">
+                    <div class="complete-icon">✓</div>
+                    <div class="complete-title">内存已清理完毕</div>
+                    <div class="complete-subtitle">内存已优化</div>
+                </div>
+                
+                <button class="clean-btn" id="cleanBtn">一键深度清理</button>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page2">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【2】病毒查杀专属页面</div>
+            <div class="sub-sub-title">全盘木马、恶意软件、风险程序查杀专区</div>
+            
+            <div class="virus-container">
+                <div class="circles-wrapper">
+                    <div class="red-circle" id="redCircle">
+                        <div class="red-ring"></div>
+                        <div class="red-pulse"></div>
+                    </div>
+                    <div class="green-circle" id="greenCircle">
+                        <div class="green-ring"></div>
+                        <div class="green-scan"></div>
+                    </div>
+                </div>
+                
+                <div class="virus-progress-container">
+                    <div class="virus-progress-item">
+                        <div class="progress-label">病毒查杀进度</div>
+                        <div class="progress-bar-bg-red">
+                            <div class="progress-bar-red" id="virusProgressRed"></div>
+                        </div>
+                        <div class="progress-num" id="virusNumRed">0%</div>
+                    </div>
+                    
+                    <div class="virus-progress-item">
+                        <div class="progress-label">卫士安全杀毒中进度</div>
+                        <div class="progress-bar-bg-green">
+                            <div class="progress-bar-green" id="virusProgressGreen"></div>
+                        </div>
+                        <div class="progress-num" id="virusNumGreen">0%</div>
+                    </div>
+                </div>
+                
+                <div class="virus-complete-box" id="virusComplete">
+                    <div class="virus-complete-icon">✓</div>
+                    <div class="virus-complete-text">病毒查杀完毕。手机已优化。</div>
+                </div>
+                
+                <button class="virus-btn" id="virusBtn">查杀病毒</button>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page3">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【3】支付保护专属页面</div>
+            <div class="sub-sub-title">账户资金、网银、第三方支付安全防护</div>
+            
+            <div class="pay-protect-container">
+                <div class="green-square-box" id="protectSquare">
+                    <div class="triangle-item green-triangle" id="greenTriangle"></div>
+                    <div class="triangle-item yellow-triangle" id="yellowTriangle"></div>
+                    <div class="protect-text">
+                        <span>支</span>
+                        <span>付</span>
+                        <span>保</span>
+                        <span>护</span>
+                        <span>专</span>
+                        <span>属</span>
+                    </div>
+                </div>
+                
+                <div class="cubes-bar" id="cubesBar">
+                    <div class="cube-item cube-1"></div>
+                    <div class="cube-item cube-2"></div>
+                    <div class="cube-item cube-3"></div>
+                    <div class="cube-item cube-4"></div>
+                    <div class="cube-item cube-5"></div>
+                    <div class="cube-item cube-6"></div>
+                    <div class="cube-item cube-7"></div>
+                    <div class="cube-item cube-8"></div>
+                    <div class="cube-item cube-9"></div>
+                </div>
+                
+                <div class="pay-protect-progress-container">
+                    <div class="pay-protect-progress-bg">
+                        <div class="pay-protect-progress-fill" id="payProtectProgress"></div>
+                    </div>
+                    <div class="pay-protect-progress-num" id="payProtectNum">0%</div>
+                </div>
+                
+                <div class="pay-protect-complete-box" id="payProtectComplete">
+                    <div class="pay-protect-complete-icon">✓</div>
+                    <div class="pay-protect-complete-text">支付保护流程完成</div>
+                </div>
+                
+                <button class="pay-protect-btn" id="payProtectBtn">支付保护</button>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+        
+        <div class="falling-numbers-container" id="fallingNumbersContainer"></div>
+    </div>
+
+    <div class="page" id="page4">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【4】恢复应用专属页面</div>
+            <div class="sub-sub-title">误卸载软件、数据备份还原恢复</div>
+            
+            <div class="restore-container">
+                <div class="restore-box">
+                    <div class="square-frame" id="squareFrame">
+                        <div class="green-glow-circle"></div>
+                        
+                        <div class="curved-lines-container">
+                            <div class="curved-line curved-line-1"></div>
+                            <div class="curved-line curved-line-2"></div>
+                            <div class="curved-line curved-line-3"></div>
+                            
+                            <div class="curved-line curved-line-4 rev"></div>
+                            <div class="curved-line curved-line-5 rev"></div>
+                            <div class="curved-line curved-line-6 rev"></div>
+                        </div>
+                        
+                        <div class="center-dot"></div>
+                        
+                        <div class="rotate-rings-container" id="rotateRings">
+                            <div class="rotate-ring outer-ring" id="outerRing"></div>
+                            <div class="rotate-ring inner-ring" id="innerRing"></div>
+                        </div>
+                        
+                        <div class="yellow-rings-container" id="yellowRingsContainer">
+                            <div class="yellow-ring" id="yellowRing1"></div>
+                            <div class="yellow-ring" id="yellowRing2"></div>
+                            <div class="yellow-ring" id="yellowRing3"></div>
+                            <div class="yellow-ring" id="yellowRing4"></div>
+                            <div class="yellow-ring" id="yellowRing5"></div>
+                            <div class="yellow-ring" id="yellowRing6"></div>
+                            <div class="yellow-ring" id="yellowRing7"></div>
+                            <div class="yellow-ring" id="yellowRing8"></div>
+                            <div class="yellow-ring" id="yellowRing9"></div>
+                        </div>
+                        
+                        <div class="red-triangle" id="redTriangle"></div>
+                    </div>
+                </div>
+                
+                <div class="restore-progress-container">
+                    <div class="restore-progress-bg">
+                        <div class="restore-progress-fill" id="restoreProgress"></div>
+                    </div>
+                    <div class="restore-progress-num" id="restoreNum">0%</div>
+                </div>
+                
+                <div class="restore-complete-box" id="restoreComplete">
+                    <div class="restore-complete-icon">✓</div>
+                    <div class="restore-complete-text">手机应用已经恢复，请继续操作</div>
+                </div>
+                
+                <button class="restore-btn" id="restoreBtn">恢复应用</button>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page5">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【5】电池修复专属页面</div>
+            <div class="sub-sub-title">电池损耗校准、耗电管控、电芯优化</div>
+            
+            <div class="battery-container">
+                <div class="battery-icons">
+                    <div class="battery-icon-box">
+                        <div class="battery-charging">
+                            <div class="battery-body">
+                                <div class="battery-level" id="batteryLevel"></div>
+                            </div>
+                            <div class="battery-cap"></div>
+                        </div>
+                        <div class="icon-label">电池修复</div>
+                    </div>
+                    
+                    <div class="battery-icon-box">
+                        <div class="battery-lightning">
+                            <div class="battery-body">
+                                <div class="battery-fill"></div>
+                            </div>
+                            <div class="battery-cap"></div>
+                            <div class="lightning">⚡</div>
+                        </div>
+                        <div class="icon-label">耗电管控</div>
+                    </div>
+                    
+                    <div class="battery-icon-box">
+                        <div class="battery-discharge">
+                            <div class="battery-cell battery-cell-1"></div>
+                            <div class="battery-cell battery-cell-2"></div>
+                        </div>
+                        <div class="icon-label">电芯优化</div>
+                    </div>
+                </div>
+                
+                <div class="battery-progress-container">
+                    <div class="battery-progress-item">
+                        <div class="battery-progress-label">电池校准</div>
+                        <div class="battery-progress-bg">
+                            <div class="battery-progress-fill" id="batteryProgress1"></div>
+                        </div>
+                        <div class="battery-progress-num" id="batteryNum1">0%</div>
+                    </div>
+                    
+                    <div class="battery-progress-item">
+                        <div class="battery-progress-label">电池管控</div>
+                        <div class="battery-progress-bg">
+                            <div class="battery-progress-fill" id="batteryProgress2"></div>
+                        </div>
+                        <div class="battery-progress-num" id="batteryNum2">0%</div>
+                    </div>
+                    
+                    <div class="battery-progress-item">
+                        <div class="battery-progress-label">电芯优化</div>
+                        <div class="battery-progress-bg">
+                            <div class="battery-progress-fill" id="batteryProgress3"></div>
+                        </div>
+                        <div class="battery-progress-num" id="batteryNum3">0%</div>
+                    </div>
+                </div>
+                
+                <div class="battery-complete-box" id="batteryComplete">
+                    <div class="battery-complete-icon">✓</div>
+                    <div class="battery-complete-text">电池修复完成</div>
+                </div>
+                
+                <button class="battery-btn" id="batteryBtn">电池修复</button>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page6">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【6】安装权限专属页面</div>
+            <div class="sub-sub-title">安装来源管控、APP权限批量管理</div>
+            
+            <div class="permission-container">
+                <div class="square-box" id="squareBox">
+                    <div class="ring-outer" id="ringOuter"></div>
+                    <div class="ring-inner" id="ringInner"></div>
+                    <div class="triangle" id="triangle"></div>
+                </div>
+                
+                <div class="permission-status">正在获取安装权限</div>
+                
+                <div class="permission-progress-container">
+                    <div class="permission-progress-bg">
+                        <div class="permission-progress-fill" id="permissionProgress"></div>
+                    </div>
+                    <div class="permission-progress-num" id="permissionNum">0%</div>
+                </div>
+                
+                <div class="permission-complete-box" id="permissionComplete">
+                    <div class="permission-complete-icon">✓</div>
+                    <div class="permission-complete-text">安装权限已全部开启，请继续安装</div>
+                </div>
+                
+                <button class="permission-btn" id="permissionBtn">获取权限</button>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page7">
+        <div style="text-align:center;padding-top:30px;">
+            <div class="sub-top-title">【7】更多权限专属页面</div>
+            <div class="sub-sub-title">高级系统权限、隐藏功能解锁专区</div>
+            
+            <div class="permissions-container">
+                <div class="permission-option option-more" id="optionMore">
+                    <span class="option-icon">⚙️</span>
+                    <span>更多权限</span>
+                </div>
+                
+                <div class="permission-option option-special" id="optionSpecial">
+                    <span class="option-icon">🔑</span>
+                    <span>特殊权限</span>
+                </div>
+                
+                <div class="permission-option option-change" id="optionChange">
+                    <span class="option-icon">🔄</span>
+                    <span>更改权限</span>
+                </div>
+                
+                <div class="result-message result-success" id="permissionResult"></div>
+            </div>
+            
+            <div class="sub-bottom-bar" style="margin-top:30px;">
+                <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回首页</button>
+            </div>
+        </div>
+        
+        <div class="effect-particles" id="particlesContainer"></div>
+        <div class="effect-flash" id="flashEffect"></div>
+    </div>
+
+    <div class="page" id="page8">
+        <div style="text-align:center;">
+            <div class="sub-top-title">【8】系统安全检测专属页面</div>
+            <div class="sub-sub-title">整机环境扫描、漏洞检测、系统安全优化专区</div>
+        </div>
+        <div class="scan-wrap">
+            <div class="rising-numbers-container" id="risingNumbers"></div>
+            <div class="outer-dots-container" id="outerDots"></div>
+            <div class="center-circle" id="scanBtn">
+                <div class="inner-dots-container" id="innerDots"></div>
+                全盘扫描
+            </div>
+
+            <div class="progress-group">
+                <div class="prog-item">
+                    <div class="prog-txt">正在检查进度：<span id="p1Txt">0%</span></div>
+                    <div class="prog-bg"><div class="prog-inner1" id="bar1"></div></div>
+                </div>
+                <div class="prog-item">
+                    <div class="prog-txt">环境进度：<span id="p2Txt">0%</span></div>
+                    <div class="prog-bg"><div class="prog-inner2" id="bar2"></div></div>
+                </div>
+                <div class="prog-item">
+                    <div class="prog-txt">优化进度：<span id="p3Txt">0%</span></div>
+                    <div class="prog-bg"><div class="prog-inner3" id="bar3"></div></div>
+                </div>
+            </div>
+            <div class="result-pop" id="resultTip">✓ 系统检测页面已显示安全无误</div>
+        </div>
+        <div class="sub-bottom-bar">
+            <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0');resetScan();">返回首页</button>
+        </div>
+    </div>
+
+    <div class="vip-prompt-overlay" id="vipTip">
+        <div class="vip-prompt-box">
+            <div>本次 VIP 授权额度为0，请进行 VIP 授权</div>
+            <button class="vip-prompt-btn" onclick="closeVipTip()">确定</button>
+        </div>
+    </div>
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="unlock-dots">
+                <div class="unlock-dot dot-red" id="dotRed" onclick="checkDot(1)"></div>
+                <div class="unlock-dot dot-green" id="dotGreen" onclick="checkDot(2)"></div>
+                <div class="unlock-dot dot-yellow" id="dotYellow" onclick="checkDot(3)"></div>
+            </div>
+            <h2 class="login-title">VIP授权登录</h2>
+            <input type="text" class="form-input" id="username" placeholder="请输入VIP账号">
+            <input type="password" class="form-input" id="password" placeholder="请输入VIP密码">
+            <div class="password-hint">提示密码：北坎为水</div>
+            <button class="login-btn" onclick="playButtonSound('click'); doLogin()">登录</button>
+            <div class="error-message" id="errorMsg"></div>
+        </div>
+    </div>
+
+    <div class="pay-modal" id="wxModal">
+        <div class="modal-content">
+            <h3>微信扫码付款</h3>
+            <div class="qrcode-box">微信收款二维码</div>
+            <div class="info-text">请输入金额并支付，转账后自动开通额度</div>
+            <button class="close-pay" onclick="closeAllPay()">关闭</button>
+        </div>
+    </div>
+    <div class="pay-modal" id="aliModal">
+        <div class="modal-content">
+            <h3>支付宝转账</h3>
+            <div class="small-qrcode-box">
+                <img src="https://neeko-copilot.bytedance.net/api/text2image?prompt=Alipay%20QR%20payment%20code%20blue%20background%20yellow%20banner%20Chinese%20text%20avatar%20center%20business%20account%20support%20credit%20card%20Huabei%20payment%20professional&image_size=square" alt="支付宝收款码">
+            </div>
+            <div class="info-text">收款邮箱：3182895653@qq.com</div>
+            <button class="copy-btn" onclick="copyText('3182895653@qq.com')">复制邮箱</button>
+            <div class="info-text">输入邮箱转账即可</div>
+            <button class="close-pay" onclick="closeAllPay()">关闭</button>
+        </div>
+    </div>
+    <div class="pay-modal" id="bankModal">
+        <div class="modal-content">
+            <h3>银行卡转账</h3>
+            <div class="bank-item">
+                <div class="bank-text">中国银行：6216698100011828408</div>
+                <button class="copy-btn" onclick="copyText('6216698100011828408')">复制卡号</button>
+            </div>
+            <div class="bank-item">
+                <div class="bank-text">建设银行：6214670330020052958</div>
+                <button class="copy-btn" onclick="copyText('6214670330020052958')">复制卡号</button>
+            </div>
+            <div class="info-text">转账成功后自动增加VIP额度</div>
+            <button class="close-pay" onclick="closeAllPay()">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        let globalAudioContext = null;
+        
+        function getAudioContext() {
+            if (!globalAudioContext) {
+                globalAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return globalAudioContext;
+        }
+        
+        function playButtonSound(soundType) {
+            try {
+                const ctx = getAudioContext();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                const sounds = {
+                    vip: { freq: [880, 1100, 1320], type: 'sine', dur: [0.1, 0.1, 0.15], gain: [0.12, 0.1, 0.15] },
+                    clean: { freq: [523, 659, 784], type: 'sine', dur: [0.1, 0.1, 0.12], gain: [0.1, 0.1, 0.12] },
+                    virus: { freq: [440, 554, 659, 880], type: 'triangle', dur: [0.08, 0.08, 0.1, 0.12], gain: [0.1, 0.1, 0.1, 0.12] },
+                    pay: { freq: [659, 784, 880], type: 'sawtooth', dur: [0.08, 0.08, 0.1], gain: [0.08, 0.1, 0.12] },
+                    restore: { freq: [587, 659, 784, 880], type: 'sine', dur: [0.1, 0.1, 0.1, 0.15], gain: [0.1, 0.1, 0.1, 0.12] },
+                    battery: { freq: [392, 440, 523], type: 'sine', dur: [0.12, 0.12, 0.15], gain: [0.1, 0.1, 0.12] },
+                    install: { freq: [698, 880, 1047], type: 'square', dur: [0.08, 0.08, 0.1], gain: [0.08, 0.08, 0.1] },
+                    more: { freq: [494, 587, 698, 880], type: 'triangle', dur: [0.08, 0.08, 0.08, 0.12], gain: [0.1, 0.1, 0.1, 0.12] },
+                    click: { freq: [1000], type: 'sine', dur: [0.05], gain: [0.05] },
+                    error: { freq: [200, 150], type: 'square', dur: [0.2, 0.3], gain: [0.1, 0.1] },
+                    success: { freq: [523, 659, 784], type: 'sine', dur: [0.1, 0.1, 0.2], gain: [0.1, 0.1, 0.15] }
+                };
+                
+                const sound = sounds[soundType] || sounds.click;
+                
+                sound.freq.forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = ctx.createOscillator();
+                        const gn = ctx.createGain();
+                        osc.connect(gn);
+                        gn.connect(ctx.destination);
+                        osc.type = sound.type;
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                        gn.gain.setValueAtTime(sound.gain[i], ctx.currentTime);
+                        gn.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + sound.dur[i]);
+                        osc.start(ctx.currentTime);
+                        osc.stop(ctx.currentTime + sound.dur[i]);
+                    }, i * 80);
+                });
+            } catch(e) {
+                console.log('Audio not available');
+            }
+        }
+
+        function createStars() {
+            const c = document.getElementById('starsContainer');
+            for(let i=0;i<200;i++){
+                let s = document.createElement('div');
+                s.className = 'star';
+                let size = Math.random()*3+1;
+                s.style.width = size+'px';
+                s.style.height = size+'px';
+                s.style.left = Math.random()*100+'%';
+                s.style.top = Math.random()*100+'%';
+                s.style.animationDelay = Math.random()*2+'s';
+                c.appendChild(s);
+            }
+        }
+
+        const USER = 'wgb';
+        const PWD = '20260606';
+        const RIGHT_CODE = '202620262026';
+        let vipNum = 0;
+
+        function showToast(msg,type){
+            const toast=document.getElementById('toastBox');
+            toast.className='toast '+type;
+            toast.innerText=msg;
+            toast.style.display='block';
+            setTimeout(()=>toast.style.display='none',1800);
+        }
+
+        function doLogin() {
+            let u = document.getElementById('username').value.trim();
+            let p = document.getElementById('password').value.trim();
+            if(u === USER && p === PWD) {
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('starsContainer').style.filter = 'blur(0)';
+            } else {
+                document.getElementById('errorMsg').innerText = '账号或密码错误';
+            }
+        }
+
+        function switchPage(pageId){
+            document.querySelectorAll('.page').forEach(item=>item.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function checkGo(num){
+            if(vipNum>0){
+                vipNum--;
+                document.getElementById('num').innerText=vipNum;
+                switchPage('page'+num);
+            }else{
+                document.getElementById('vipTip').classList.add('show');
+            }
+        }
+        function closeVipTip(){
+            document.getElementById('vipTip').classList.remove('show');
+        }
+
+        let unlockSequence = [];
+        const correctSequence = [1, 2, 3];
+        let wrongAttempts = 0;
+        const maxAttempts = 7;
+        
+        function checkDot(dotNum) {
+            const dots = [document.getElementById('dotRed'), document.getElementById('dotGreen'), document.getElementById('dotYellow')];
+            
+            playButtonSound('click');
+            unlockSequence.push(dotNum);
+            dots[dotNum - 1].classList.add('active');
+            
+            if (unlockSequence.length === 3) {
+                const isCorrect = JSON.stringify(unlockSequence) === JSON.stringify(correctSequence);
+                
+                if (isCorrect) {
+                    playButtonSound('success');
+                    dots.forEach(dot => {
+                        dot.style.transform = 'scale(1.5)';
+                        dot.style.boxShadow = '0 0 30px currentColor, 0 0 60px currentColor';
+                    });
+                    setTimeout(() => {
+                        document.getElementById('loginOverlay').classList.add('hidden');
+                    }, 800);
+                } else {
+                    wrongAttempts++;
+                    playButtonSound('error');
+                    dots.forEach(dot => {
+                        dot.classList.add('wrong');
+                        setTimeout(() => {
+                            dot.classList.remove('wrong', 'active');
+                        }, 500);
+                    });
+                    
+                    if (wrongAttempts >= maxAttempts) {
+                        setTimeout(() => {
+                            showToast('已达最大尝试次数，请输入密码登录', 'fail');
+                        }, 300);
+                    } else {
+                        setTimeout(() => {
+                            showToast(`解锁失败，剩余${maxAttempts - wrongAttempts}次机会`, 'fail');
+                        }, 300);
+                    }
+                }
+                
+                unlockSequence = [];
+                
+                setTimeout(() => {
+                    dots.forEach(dot => {
+                        dot.classList.remove('active');
+                        dot.style.transform = '';
+                        dot.style.boxShadow = '';
+                    });
+                }, 1000);
+            }
+        }
+
+        function openWx(){ document.getElementById('wxModal').classList.add('open'); }
+        function openAlipay(){ document.getElementById('aliModal').classList.add('open'); }
+        function openBank(){ document.getElementById('bankModal').classList.add('open'); }
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '已复制';
+                btn.style.background = 'linear-gradient(145deg, #28a745, #20c997)';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = 'linear-gradient(145deg, #4a90d9, #357abd)';
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+        function closeAllPay(){
+            document.querySelectorAll('.pay-modal').forEach(i=>i.classList.remove('open'));
+        }
+
+        function checkVerify(){
+            let val = document.getElementById('verifyCode').value.trim();
+            if(val === RIGHT_CODE){
+                vipNum++;
+                document.getElementById('num').innerText = vipNum;
+                showToast('额度增加成功','success');
+                document.getElementById('verifyCode').value='';
+            }else{
+                showToast('验证额度失败，请确认是否支付','fail');
+            }
+        }
+
+        const scanBtn = document.getElementById('scanBtn');
+        const outerDots = document.getElementById('outerDots');
+        const innerDots = document.getElementById('innerDots');
+        const bar1 = document.getElementById('bar1');
+        const bar2 = document.getElementById('bar2');
+        const bar3 = document.getElementById('bar3');
+        const p1Txt = document.getElementById('p1Txt');
+        const p2Txt = document.getElementById('p2Txt');
+        const p3Txt = document.getElementById('p3Txt');
+        const resultTip = document.getElementById('resultTip');
+
+        let scanRunning = false;
+
+        function createOuterDots(){
+            outerDots.innerHTML = "";
+            const containerSize = 240;
+            const radius = 110;
+            const dotCount = 24;
+            
+            for(let i=0; i<dotCount; i++){
+                let dot = document.createElement('div');
+                dot.className = 'outer-dot';
+                let angle = i * (360/dotCount);
+                let x = containerSize/2 + radius * Math.cos(angle * Math.PI / 180);
+                let y = containerSize/2 + radius * Math.sin(angle * Math.PI / 180);
+                dot.style.left = x + 'px';
+                dot.style.top = y + 'px';
+                const scale = 0.6 + Math.random() * 0.4;
+                dot.style.transform = `scale(${scale})`;
+                dot.style.opacity = 0.4 + Math.random() * 0.6;
+                outerDots.appendChild(dot);
+            }
+            outerDots.style.display = 'block';
+        }
+
+        function createInnerDots(){
+            innerDots.innerHTML = "";
+            const containerSize = 120;
+            const radius = 45;
+            const dotCount = 12;
+            
+            for(let i=0; i<dotCount; i++){
+                let dot = document.createElement('div');
+                dot.className = 'inner-dot';
+                let angle = i * (360/dotCount);
+                let x = containerSize/2 + radius * Math.cos(angle * Math.PI / 180);
+                let y = containerSize/2 + radius * Math.sin(angle * Math.PI / 180);
+                dot.style.left = x + 'px';
+                dot.style.top = y + 'px';
+                const scale = 0.7 + Math.random() * 0.3;
+                dot.style.transform = `scale(${scale})`;
+                dot.style.opacity = 0.5 + Math.random() * 0.5;
+                innerDots.appendChild(dot);
+            }
+            innerDots.style.display = 'block';
+        }
+
+        function resetScan(){
+            scanRunning=false;
+            scanBtn.classList.remove('scanning');
+            outerDots.style.display = 'none';
+            innerDots.style.display = 'none';
+            bar1.style.width="0%";p1Txt.textContent="0%";
+            bar2.style.width="0%";p2Txt.textContent="0%";
+            bar3.style.width="0%";p3Txt.textContent="0%";
+            resultTip.style.display="none";
+            risingNumbers.innerHTML = '';
+        }
+
+        function createRisingNumber(isLarge = false) {
+            const numbers = '0123456789';
+            const num = numbers[Math.floor(Math.random() * numbers.length)];
+            const span = document.createElement('span');
+            span.className = `rising-number ${isLarge ? 'large' : 'small'}`;
+            span.textContent = num;
+            span.style.left = Math.random() * 90 + 5 + '%';
+            span.style.animationDuration = (3 + Math.random() * 3) + 's';
+            span.style.animationDelay = Math.random() * 0.5 + 's';
+            span.style.textShadow = `
+                0 0 ${10 + Math.random() * 10}px rgba(0, 255, 136, ${0.7 + Math.random() * 0.3}),
+                0 0 ${20 + Math.random() * 15}px rgba(0, 255, 136, ${0.5 + Math.random() * 0.3}),
+                0 0 ${30 + Math.random() * 20}px rgba(64, 217, 255, ${0.3 + Math.random() * 0.3})
+            `;
+            risingNumbers.appendChild(span);
+            
+            setTimeout(() => {
+                span.remove();
+            }, 6000);
+        }
+
+        function startRisingNumbers() {
+            const createLargeNum = () => {
+                if (scanRunning) {
+                    createRisingNumber(true);
+                    setTimeout(createLargeNum, 1500 + Math.random() * 1500);
+                }
+            };
+            
+            const createSmallNums = () => {
+                if (scanRunning) {
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => createRisingNumber(false), i * 100);
+                    }
+                    setTimeout(createSmallNums, 300 + Math.random() * 200);
+                }
+            };
+            
+            createLargeNum();
+            createSmallNums();
+        }
+
+        scanBtn.onclick=async function(){
+            playButtonSound('success');
+            if(scanRunning)return;
+            scanRunning=true;
+            scanBtn.classList.add('scanning');
+            createOuterDots();
+            createInnerDots();
+            startRisingNumbers();
+            
+            let per1=0;
+            let t1=setInterval(()=>{
+                per1++;
+                bar1.style.width=per1+"%";
+                p1Txt.textContent=per1+"%";
+                if(per1>=100)clearInterval(t1);
+            },1000);
+
+            let per2=0;
+            let t2=setInterval(()=>{
+                per2+=2;
+                bar2.style.width=per2+"%";
+                p2Txt.textContent=per2+"%";
+                if(per2>=100)clearInterval(t2);
+            },1000);
+
+            let per3=0;
+            function runPro3(){
+                if(per3<50){
+                    per3+=2;
+                    bar3.style.width=per3+"%";p3Txt.textContent=per3+"%";
+                    setTimeout(runPro3,500);
+                }else if(per3<100){
+                    per3+=1;
+                    bar3.style.width=per3+"%";p3Txt.textContent=per3+"%";
+                    setTimeout(runPro3,2000);
+                }
+            }
+            runPro3();
+
+            setTimeout(()=>{
+                resultTip.style.display="block";
+            },100000);
+        }
+
+        function initCleanMemory(){
+            const outerDotsMemory = document.getElementById('outerDotsMemory');
+            const innerDotsMemory = document.getElementById('innerDotsMemory');
+            const rotatingCircle = document.getElementById('rotatingCircle');
+            const cleanProgress = document.getElementById('cleanProgress');
+            const progressText = document.getElementById('progressText');
+            const completeBox = document.getElementById('completeBox');
+            const cleanBtn = document.getElementById('cleanBtn');
+            
+            let isCleaning = false;
+            
+            function createOuterDots(){
+                outerDotsMemory.innerHTML = "";
+                const containerSize = 200;
+                const radius = 85;
+                const dotCount = 36;
+                
+                for(let i=0; i<dotCount; i++){
+                    let dot = document.createElement('div');
+                    dot.className = 'outer-dot-memory';
+                    let angle = i * (360/dotCount);
+                    let x = containerSize/2 + radius * Math.cos(angle * Math.PI / 180);
+                    let y = containerSize/2 + radius * Math.sin(angle * Math.PI / 180);
+                    dot.style.left = x + 'px';
+                    dot.style.top = y + 'px';
+                    const scale = 0.7 + Math.random() * 0.3;
+                    dot.style.transform = `scale(${scale})`;
+                    dot.style.opacity = 0.6 + Math.random() * 0.4;
+                    outerDotsMemory.appendChild(dot);
+                }
+                outerDotsMemory.style.display = 'block';
+            }
+            
+            function createInnerDots(){
+                innerDotsMemory.innerHTML = "";
+                const containerSize = 200;
+                const radius = 50;
+                const dotCount = 36;
+                
+                for(let i=0; i<dotCount; i++){
+                    let dot = document.createElement('div');
+                    dot.className = 'inner-dot-memory';
+                    let angle = i * (360/dotCount);
+                    let x = containerSize/2 + radius * Math.cos(angle * Math.PI / 180);
+                    let y = containerSize/2 + radius * Math.sin(angle * Math.PI / 180);
+                    dot.style.left = x + 'px';
+                    dot.style.top = y + 'px';
+                    const scale = 0.6 + Math.random() * 0.4;
+                    dot.style.transform = `scale(${scale})`;
+                    dot.style.opacity = 0.5 + Math.random() * 0.5;
+                    innerDotsMemory.appendChild(dot);
+                }
+                innerDotsMemory.style.display = 'block';
+            }
+            
+            cleanBtn.onclick = function(){
+                playButtonSound('clean');
+                if(isCleaning) return;
+                isCleaning = true;
+                
+                rotatingCircle.classList.add('active');
+                createOuterDots();
+                createInnerDots();
+                cleanProgress.style.width = '0%';
+                progressText.textContent = '0%';
+                completeBox.style.display = 'none';
+                cleanBtn.disabled = true;
+                cleanBtn.textContent = '清理中...';
+                
+                const duration = 20000 + Math.random() * 10000;
+                const startTime = Date.now();
+                const totalDuration = duration;
+                
+                function updateProgress(){
+                    if(!isCleaning) return;
+                    
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(100, (elapsed / totalDuration) * 100);
+                    
+                    cleanProgress.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                    
+                    if(progress >= 100){
+                        rotatingCircle.classList.remove('active');
+                        outerDotsMemory.style.display = 'none';
+                        innerDotsMemory.style.display = 'none';
+                        completeBox.style.display = 'block';
+                        cleanBtn.disabled = false;
+                        cleanBtn.textContent = '一键深度清理';
+                        isCleaning = false;
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+                
+                requestAnimationFrame(updateProgress);
+            };
+        }
+
+        function initVirusScan(){
+            const redCircle = document.getElementById('redCircle');
+            const greenCircle = document.getElementById('greenCircle');
+            const virusProgressRed = document.getElementById('virusProgressRed');
+            const virusProgressGreen = document.getElementById('virusProgressGreen');
+            const virusNumRed = document.getElementById('virusNumRed');
+            const virusNumGreen = document.getElementById('virusNumGreen');
+            const virusComplete = document.getElementById('virusComplete');
+            const virusBtn = document.getElementById('virusBtn');
+            
+            let isScanning = false;
+            
+            virusBtn.onclick = function(){
+                playButtonSound('virus');
+                if(isScanning) return;
+                isScanning = true;
+                
+                virusProgressRed.style.width = '0%';
+                virusProgressGreen.style.width = '0%';
+                virusNumRed.textContent = '0%';
+                virusNumGreen.textContent = '0%';
+                virusComplete.style.display = 'none';
+                virusBtn.disabled = true;
+                virusBtn.textContent = '查杀中...';
+                
+                const duration = 20000 + Math.random() * 10000;
+                const startTime = Date.now();
+                const totalDuration = duration;
+                
+                function updateProgress(){
+                    if(!isScanning) return;
+                    
+                    const elapsed = Date.now() - startTime;
+                    const redProgress = Math.min(100, (elapsed / totalDuration) * 100);
+                    const greenProgress = Math.min(100, (elapsed / totalDuration) * 100 * 0.9);
+                    
+                    virusProgressRed.style.width = redProgress + '%';
+                    virusProgressGreen.style.width = greenProgress + '%';
+                    virusNumRed.textContent = Math.round(redProgress) + '%';
+                    virusNumGreen.textContent = Math.round(greenProgress) + '%';
+                    
+                    if(redProgress >= 100){
+                        virusComplete.style.display = 'block';
+                        virusBtn.disabled = false;
+                        virusBtn.textContent = '查杀病毒';
+                        isScanning = false;
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+                
+                requestAnimationFrame(updateProgress);
+            };
+        }
+
+        function initPermission(){
+            const triangle = document.getElementById('triangle');
+            const permissionProgress = document.getElementById('permissionProgress');
+            const permissionNum = document.getElementById('permissionNum');
+            const permissionComplete = document.getElementById('permissionComplete');
+            const permissionBtn = document.getElementById('permissionBtn');
+            
+            let isProcessing = false;
+            
+            permissionBtn.onclick = function(){
+                playButtonSound('install');
+                if(isProcessing) return;
+                isProcessing = true;
+                
+                triangle.classList.add('active');
+                permissionProgress.style.width = '0%';
+                permissionNum.textContent = '0%';
+                permissionComplete.style.display = 'none';
+                permissionBtn.disabled = true;
+                permissionBtn.textContent = '获取中...';
+                
+                const duration = 15000 + Math.random() * 5000;
+                const startTime = Date.now();
+                const totalDuration = duration;
+                
+                function updateProgress(){
+                    if(!isProcessing) return;
+                    
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(100, (elapsed / totalDuration) * 100);
+                    
+                    permissionProgress.style.width = progress + '%';
+                    permissionNum.textContent = Math.round(progress) + '%';
+                    
+                    if(progress >= 100){
+                        permissionComplete.style.display = 'block';
+                        permissionBtn.disabled = false;
+                        permissionBtn.textContent = '获取权限';
+                        isProcessing = false;
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+                
+                requestAnimationFrame(updateProgress);
+            };
+        }
+
+        function initBattery(){
+            const batteryLevel = document.getElementById('batteryLevel');
+            const batteryProgress1 = document.getElementById('batteryProgress1');
+            const batteryProgress2 = document.getElementById('batteryProgress2');
+            const batteryProgress3 = document.getElementById('batteryProgress3');
+            const batteryNum1 = document.getElementById('batteryNum1');
+            const batteryNum2 = document.getElementById('batteryNum2');
+            const batteryNum3 = document.getElementById('batteryNum3');
+            const batteryComplete = document.getElementById('batteryComplete');
+            const batteryBtn = document.getElementById('batteryBtn');
+            
+            let isProcessing = false;
+            
+            function updateBatteryCells(progress){
+                const cellCount = Math.ceil((progress / 100) * 9);
+                batteryLevel.innerHTML = '';
+                for(let i=0; i<cellCount; i++){
+                    const cell = document.createElement('div');
+                    cell.style.width = '8px';
+                    cell.style.height = '8px';
+                    cell.style.background = '#00ff88';
+                    cell.style.borderRadius = '1px';
+                    cell.style.margin = '1px';
+                    batteryLevel.appendChild(cell);
+                }
+                batteryLevel.style.height = (cellCount * 10 + 4) + 'px';
+            }
+            
+            batteryBtn.onclick = function(){
+                playButtonSound('battery');
+                if(isProcessing) return;
+                isProcessing = true;
+                
+                batteryProgress1.style.width = '0%';
+                batteryProgress2.style.width = '0%';
+                batteryProgress3.style.width = '0%';
+                batteryNum1.textContent = '0%';
+                batteryNum2.textContent = '0%';
+                batteryNum3.textContent = '0%';
+                batteryComplete.style.display = 'none';
+                batteryBtn.disabled = true;
+                batteryBtn.textContent = '修复中...';
+                batteryLevel.innerHTML = '';
+                batteryLevel.style.height = '0px';
+                
+                const duration = 20000 + Math.random() * 10000;
+                const startTime = Date.now();
+                const totalDuration = duration;
+                
+                function updateProgress(){
+                    if(!isProcessing) return;
+                    
+                    const elapsed = Date.now() - startTime;
+                    const progress1 = Math.min(100, (elapsed / totalDuration) * 100);
+                    const progress2 = Math.min(100, (elapsed / totalDuration) * 100 * 0.95);
+                    const progress3 = Math.min(100, (elapsed / totalDuration) * 100 * 0.9);
+                    
+                    batteryProgress1.style.width = progress1 + '%';
+                    batteryProgress2.style.width = progress2 + '%';
+                    batteryProgress3.style.width = progress3 + '%';
+                    batteryNum1.textContent = Math.round(progress1) + '%';
+                    batteryNum2.textContent = Math.round(progress2) + '%';
+                    batteryNum3.textContent = Math.round(progress3) + '%';
+                    
+                    updateBatteryCells(progress1);
+                    
+                    if(progress1 >= 100 && progress2 >= 100 && progress3 >= 100){
+                        batteryComplete.style.display = 'block';
+                        batteryBtn.disabled = false;
+                        batteryBtn.textContent = '电池修复';
+                        isProcessing = false;
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+                
+                requestAnimationFrame(updateProgress);
+            };
+        }
+
+        function initPermissions(){
+            const optionMore = document.getElementById('optionMore');
+            const optionSpecial = document.getElementById('optionSpecial');
+            const optionChange = document.getElementById('optionChange');
+            const permissionResult = document.getElementById('permissionResult');
+            const particlesContainer = document.getElementById('particlesContainer');
+            const flashEffect = document.getElementById('flashEffect');
+            
+            let audioContext = null;
+            
+            function initAudio() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                return audioContext;
+            }
+            
+            function playSound(frequency, duration, type = 'sine', gain = 0.1) {
+                try {
+                    const ctx = initAudio();
+                    const oscillator = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    
+                    oscillator.type = type;
+                    oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                    
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + duration);
+                } catch(e) {
+                    console.log('Audio not available');
+                }
+            }
+            
+            function createParticles(x, y, color, count = 20) {
+                for (let i = 0; i < count; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    particle.style.width = (4 + Math.random() * 8) + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.background = color;
+                    particle.style.boxShadow = `0 0 10px ${color}`;
+                    
+                    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+                    const distance = 50 + Math.random() * 150;
+                    particle.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
+                    particle.style.setProperty('--dy', Math.sin(angle) * distance + 'px');
+                    particle.style.animationDuration = (0.5 + Math.random() * 0.5) + 's';
+                    
+                    particlesContainer.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 1000);
+                }
+            }
+            
+            function showFlash() {
+                flashEffect.style.display = 'block';
+                flashEffect.style.animation = 'none';
+                flashEffect.offsetHeight;
+                flashEffect.style.animation = 'flashEffect 0.3s ease-out';
+            }
+            
+            function showResult(message) {
+                permissionResult.textContent = message;
+                permissionResult.style.display = 'block';
+                setTimeout(() => {
+                    permissionResult.style.display = 'none';
+                }, 3000);
+            }
+            
+            optionMore.onclick = function() {
+                playSound(880, 0.2, 'sine', 0.15);
+                setTimeout(() => playSound(1100, 0.15, 'sine', 0.1), 150);
+                setTimeout(() => playSound(1320, 0.2, 'sine', 0.15), 300);
+                
+                createParticles(window.innerWidth / 2, window.innerHeight / 2, '#818cf8', 25);
+                showFlash();
+                showResult('更多权限已解锁，高级功能可用');
+            };
+            
+            optionSpecial.onclick = function() {
+                playSound(440, 0.15, 'triangle', 0.12);
+                setTimeout(() => playSound(660, 0.2, 'triangle', 0.15), 100);
+                setTimeout(() => playSound(880, 0.15, 'triangle', 0.1), 250);
+                setTimeout(() => playSound(1320, 0.3, 'triangle', 0.18), 400);
+                
+                createParticles(window.innerWidth / 2, window.innerHeight / 2, '#fbbf24', 30);
+                showFlash();
+                showResult('特殊权限已激活，敏感操作可用');
+            };
+            
+            optionChange.onclick = function() {
+                playSound(600, 0.1, 'square', 0.1);
+                setTimeout(() => playSound(800, 0.12, 'square', 0.12), 100);
+                setTimeout(() => playSound(1000, 0.1, 'square', 0.1), 200);
+                setTimeout(() => playSound(1200, 0.15, 'square', 0.15), 300);
+                setTimeout(() => playSound(1400, 0.2, 'sine', 0.12), 450);
+                
+                createParticles(window.innerWidth / 2, window.innerHeight / 2, '#34d399', 20);
+                showFlash();
+                showResult('权限已更改，设置已保存');
+            };
+        }
+
+        function initPayProtect(){
+            const payProtectProgress = document.getElementById('payProtectProgress');
+            const payProtectNum = document.getElementById('payProtectNum');
+            const payProtectComplete = document.getElementById('payProtectComplete');
+            const payProtectBtn = document.getElementById('payProtectBtn');
+            const cubesBar = document.getElementById('cubesBar');
+            const fallingNumbersContainer = document.getElementById('fallingNumbersContainer');
+            const cubes = cubesBar.querySelectorAll('.cube-item');
+            const protectSquare = document.getElementById('protectSquare');
+            const greenTriangle = document.getElementById('greenTriangle');
+            const yellowTriangle = document.getElementById('yellowTriangle');
+            
+            let isProcessing = false;
+            let animationFrame = null;
+            
+            const squareSize = 220;
+            const triangleSize = 40;
+            
+            const trianglesData = [];
+            
+            function initTriangles() {
+                const triangles = [greenTriangle, yellowTriangle];
+                const colors = ['green', 'yellow'];
+                
+                triangles.forEach((triangle, index) => {
+                    const speed = 1.2 + Math.random() * 1.5;
+                    const angleRad = Math.random() * Math.PI * 2;
+                    const startX = squareSize / 2 - triangleSize / 2 + (Math.random() - 0.5) * 80;
+                    const startY = squareSize / 2 - triangleSize / 2 + (Math.random() - 0.5) * 80;
+                    
+                    trianglesData.push({
+                        element: triangle,
+                        x: startX,
+                        y: startY,
+                        vx: Math.cos(angleRad) * speed,
+                        vy: Math.sin(angleRad) * speed,
+                        width: triangleSize,
+                        height: triangleSize,
+                        rotation: Math.random() * 360,
+                        rotationSpeed: (Math.random() - 0.5) * 12,
+                        color: colors[index]
+                    });
+                });
+            }
+            
+            function updateTriangles() {
+                trianglesData.forEach((tri, index) => {
+                    tri.x += tri.vx;
+                    tri.y += tri.vy;
+                    tri.rotation += tri.rotationSpeed;
+                    
+                    let bounced = false;
+                    
+                    if (tri.x <= 0) {
+                        tri.vx = Math.abs(tri.vx) * (0.9 + Math.random() * 0.2);
+                        tri.x = 0;
+                        bounced = true;
+                    } else if (tri.x + tri.width >= squareSize) {
+                        tri.vx = -Math.abs(tri.vx) * (0.9 + Math.random() * 0.2);
+                        tri.x = squareSize - tri.width;
+                        bounced = true;
+                    }
+                    
+                    if (tri.y <= 0) {
+                        tri.vy = Math.abs(tri.vy) * (0.9 + Math.random() * 0.2);
+                        tri.y = 0;
+                        bounced = true;
+                    } else if (tri.y + tri.height >= squareSize) {
+                        tri.vy = -Math.abs(tri.vy) * (0.9 + Math.random() * 0.2);
+                        tri.y = squareSize - tri.height;
+                        bounced = true;
+                    }
+                    
+                    if (bounced) {
+                        tri.element.classList.add('bouncing');
+                        setTimeout(() => {
+                            tri.element.classList.remove('bouncing');
+                        }, 200);
+                    }
+                    
+                    const otherTri = trianglesData[(index + 1) % 2];
+                    const dx = tri.x - otherTri.x;
+                    const dy = tri.y - otherTri.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = tri.width * 0.8;
+                    
+                    if (dist < minDist && dist > 0) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const overlap = minDist - dist;
+                        
+                        tri.x += nx * overlap / 2;
+                        tri.y += ny * overlap / 2;
+                        otherTri.x -= nx * overlap / 2;
+                        otherTri.y -= ny * overlap / 2;
+                        
+                        const tempVx = tri.vx;
+                        const tempVy = tri.vy;
+                        tri.vx = otherTri.vx * 0.9;
+                        tri.vy = otherTri.vy * 0.9;
+                        otherTri.vx = tempVx * 0.9;
+                        otherTri.vy = tempVy * 0.9;
+                    }
+                    
+                    tri.element.style.left = tri.x + 'px';
+                    tri.element.style.top = tri.y + 'px';
+                    tri.element.style.transform = `rotate(${tri.rotation}deg)`;
+                });
+                
+                animationFrame = requestAnimationFrame(updateTriangles);
+            }
+            
+            initTriangles();
+            updateTriangles();
+            
+            function createFallingNumber() {
+                const numbers = '1234567890';
+                const num = numbers[Math.floor(Math.random() * numbers.length)];
+                const span = document.createElement('span');
+                span.className = 'falling-number';
+                span.textContent = num;
+                span.style.left = Math.random() * 100 + '%';
+                span.style.animationDuration = (2 + Math.random() * 2) + 's';
+                span.style.animationDelay = Math.random() * 0.5 + 's';
+                fallingNumbersContainer.appendChild(span);
+                
+                setTimeout(() => {
+                    span.remove();
+                }, 4000);
+            }
+            
+            payProtectBtn.onclick = function(){
+                playButtonSound('pay');
+                if(isProcessing) return;
+                isProcessing = true;
+                
+                payProtectProgress.style.width = '0%';
+                payProtectNum.textContent = '0%';
+                payProtectComplete.style.display = 'none';
+                payProtectBtn.disabled = true;
+                payProtectBtn.textContent = '保护中...';
+                
+                cubes.forEach(cube => cube.classList.remove('active'));
+                
+                fallingNumbersContainer.classList.add('active');
+                
+                const duration = 15000;
+                const startTime = Date.now();
+                const totalDuration = duration;
+                
+                let lastCubeIndex = -1;
+                
+                function updateProgress(){
+                    if(!isProcessing) return;
+                    
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(100, (elapsed / totalDuration) * 100);
+                    
+                    payProtectProgress.style.width = progress + '%';
+                    payProtectNum.textContent = Math.round(progress) + '%';
+                    
+                    const currentCubeIndex = Math.floor((progress / 100) * cubes.length);
+                    if(currentCubeIndex > lastCubeIndex && currentCubeIndex < cubes.length){
+                        cubes[currentCubeIndex].classList.add('active');
+                        lastCubeIndex = currentCubeIndex;
+                    }
+                    
+                    if(Math.random() > 0.7) {
+                        createFallingNumber();
+                    }
+                    
+                    if(progress >= 100){
+                        fallingNumbersContainer.classList.remove('active');
+                        payProtectComplete.style.display = 'block';
+                        payProtectBtn.disabled = false;
+                        payProtectBtn.textContent = '支付保护';
+                        isProcessing = false;
+                        
+                        setTimeout(() => {
+                            fallingNumbersContainer.innerHTML = '';
+                        }, 500);
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+                
+                requestAnimationFrame(updateProgress);
+            };
+        }
+
+        function initRestore(){
+            const restoreProgress = document.getElementById('restoreProgress');
+            const restoreNum = document.getElementById('restoreNum');
+            const restoreComplete = document.getElementById('restoreComplete');
+            const restoreBtn = document.getElementById('restoreBtn');
+            const squareFrame = document.getElementById('squareFrame');
+            const yellowRings = document.querySelectorAll('.yellow-ring');
+            
+            let isProcessing = false;
+            let animationFrame = null;
+            let audioContext = null;
+            
+            const ringsData = [];
+            const squareSize = 180;
+            const ringSize = 16;
+            const centerRadius = 50;
+            const minSpeed = 0.8;
+            const maxSpeed = 2.5;
+            
+            const redTriangle = document.getElementById('redTriangle');
+            let triangleData = null;
+            
+            function initTriangle() {
+                const triangleWidth = 30;
+                const triangleHeight = 26;
+                const speed = 1.5 + Math.random() * 2;
+                const angleRad = Math.random() * Math.PI * 2;
+                
+                triangleData = {
+                    element: redTriangle,
+                    x: squareSize / 2 - triangleWidth / 2 + (Math.random() - 0.5) * 60,
+                    y: squareSize / 2 - triangleHeight / 2 + (Math.random() - 0.5) * 60,
+                    vx: Math.cos(angleRad) * speed,
+                    vy: Math.sin(angleRad) * speed,
+                    width: triangleWidth,
+                    height: triangleHeight,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 15,
+                    trail: []
+                };
+                
+                updateTrianglePosition();
+            }
+            
+            function updateTriangle() {
+                if (!triangleData) return;
+                
+                triangleData.x += triangleData.vx;
+                triangleData.y += triangleData.vy;
+                triangleData.rotation += triangleData.rotationSpeed;
+                
+                const halfWidth = triangleData.width / 2;
+                const halfHeight = triangleData.height / 2;
+                
+                let bounced = false;
+                
+                if (triangleData.x <= 0) {
+                    triangleData.vx = Math.abs(triangleData.vx) * (0.9 + Math.random() * 0.2);
+                    triangleData.x = 0;
+                    bounced = true;
+                } else if (triangleData.x + triangleData.width >= squareSize) {
+                    triangleData.vx = -Math.abs(triangleData.vx) * (0.9 + Math.random() * 0.2);
+                    triangleData.x = squareSize - triangleData.width;
+                    bounced = true;
+                }
+                
+                if (triangleData.y <= 0) {
+                    triangleData.vy = Math.abs(triangleData.vy) * (0.9 + Math.random() * 0.2);
+                    triangleData.y = 0;
+                    bounced = true;
+                } else if (triangleData.y + triangleData.height >= squareSize) {
+                    triangleData.vy = -Math.abs(triangleData.vy) * (0.9 + Math.random() * 0.2);
+                    triangleData.y = squareSize - triangleData.height;
+                    bounced = true;
+                }
+                
+                triangleData.trail.push({ x: triangleData.x, y: triangleData.y });
+                if (triangleData.trail.length > 8) {
+                    triangleData.trail.shift();
+                }
+                
+                if (bounced) {
+                    redTriangle.classList.add('bouncing');
+                    setTimeout(() => {
+                        redTriangle.classList.remove('bouncing');
+                    }, 200);
+                }
+                
+                updateTrianglePosition();
+            }
+            
+            function updateTrianglePosition() {
+                if (!triangleData) return;
+                triangleData.element.style.left = triangleData.x + 'px';
+                triangleData.element.style.top = triangleData.y + 'px';
+                triangleData.element.style.transform = `rotate(${triangleData.rotation}deg)`;
+            }
+            
+            function initAudioContext() {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                return audioContext;
+            }
+            
+            function playBounceSound() {
+                try {
+                    const ctx = initAudioContext();
+                    const oscillator = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(800 + Math.random() * 400, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.15);
+                } catch(e) {
+                    console.log('Audio not available');
+                }
+            }
+            
+            function playRingSound() {
+                try {
+                    const ctx = initAudioContext();
+                    const oscillator = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(200 + Math.random() * 100, ctx.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.3);
+                } catch(e) {
+                    console.log('Audio not available');
+                }
+            }
+            
+            function initRings(){
+                yellowRings.forEach((ring, index) => {
+                    const angle = (index / yellowRings.length) * Math.PI * 2;
+                    const radius = 25 + Math.random() * 30;
+                    const x = squareSize / 2 - ringSize / 2 + Math.cos(angle) * radius;
+                    const y = squareSize / 2 - ringSize / 2 + Math.sin(angle) * radius;
+                    const speed = minSpeed + Math.random() * (maxSpeed - minSpeed);
+                    const angleRad = Math.random() * Math.PI * 2;
+                    
+                    ring.style.left = x + 'px';
+                    ring.style.top = y + 'px';
+                    ring.style.opacity = 0.7 + Math.random() * 0.3;
+                    
+                    ringsData.push({
+                        element: ring,
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angleRad) * speed,
+                        vy: Math.sin(angleRad) * speed,
+                        size: ringSize,
+                        rotation: Math.random() * 360,
+                        rotationSpeed: (Math.random() - 0.5) * 8,
+                        phase: Math.random() * Math.PI * 2,
+                        pulseOffset: index * 0.3
+                    });
+                });
+            }
+            
+            function updateRings(){
+                const time = Date.now() / 1000;
+                
+                ringsData.forEach((ring, index) => {
+                    ring.x += ring.vx;
+                    ring.y += ring.vy;
+                    ring.rotation += ring.rotationSpeed;
+                    
+                    const pulse = 0.8 + 0.2 * Math.sin(time * 3 + ring.pulseOffset);
+                    const scale = 0.9 + 0.1 * Math.sin(time * 2 + index);
+                    
+                    const centerX = squareSize / 2;
+                    const centerY = squareSize / 2;
+                    const dx = ring.x + ring.size / 2 - centerX;
+                    const dy = ring.y + ring.size / 2 - centerY;
+                    const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+                    
+                    let bounced = false;
+                    
+                    if(ring.x <= 0){
+                        ring.vx = Math.abs(ring.vx) * (0.9 + Math.random() * 0.2);
+                        ring.x = 0;
+                        bounced = true;
+                    } else if(ring.x + ring.size >= squareSize){
+                        ring.vx = -Math.abs(ring.vx) * (0.9 + Math.random() * 0.2);
+                        ring.x = squareSize - ring.size;
+                        bounced = true;
+                    }
+                    
+                    if(ring.y <= 0){
+                        ring.vy = Math.abs(ring.vy) * (0.9 + Math.random() * 0.2);
+                        ring.y = 0;
+                        bounced = true;
+                    } else if(ring.y + ring.size >= squareSize){
+                        ring.vy = -Math.abs(ring.vy) * (0.9 + Math.random() * 0.2);
+                        ring.y = squareSize - ring.size;
+                        bounced = true;
+                    }
+                    
+                    if(distFromCenter + ring.size / 2 > centerRadius){
+                        const nx = -dx / distFromCenter;
+                        const ny = -dy / distFromCenter;
+                        const dotProduct = ring.vx * nx + ring.vy * ny;
+                        
+                        ring.vx -= 2.5 * dotProduct * nx;
+                        ring.vy -= 2.5 * dotProduct * ny;
+                        
+                        const speed = Math.sqrt(ring.vx * ring.vx + ring.vy * ring.vy);
+                        const maxBounceSpeed = maxSpeed * 1.2;
+                        if(speed > maxBounceSpeed){
+                            ring.vx = (ring.vx / speed) * maxBounceSpeed;
+                            ring.vy = (ring.vy / speed) * maxBounceSpeed;
+                        }
+                        
+                        const newDx = ring.x + ring.size / 2 - centerX;
+                        const newDy = ring.y + ring.size / 2 - centerY;
+                        const newDist = Math.sqrt(newDx * newDx + newDy * newDy);
+                        if(newDist > centerRadius - ring.size / 2){
+                            ring.x = centerX - ring.size / 2 + (centerRadius - ring.size / 2) * newDx / newDist;
+                            ring.y = centerY - ring.size / 2 + (centerRadius - ring.size / 2) * newDy / newDist;
+                        }
+                        bounced = true;
+                    }
+                    
+                    
+                    
+                    ringsData.forEach((otherRing, otherIndex) => {
+                        if(index !== otherIndex){
+                            const dx2 = ring.x - otherRing.x;
+                            const dy2 = ring.y - otherRing.y;
+                            const dist = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                            const minDist = ring.size + otherRing.size - 4;
+                            
+                            if(dist < minDist && dist > 0){
+                                const nx = dx2 / dist;
+                                const ny = dy2 / dist;
+                                const overlap = minDist - dist;
+                                
+                                ring.x += nx * overlap / 2;
+                                ring.y += ny * overlap / 2;
+                                otherRing.x -= nx * overlap / 2;
+                                otherRing.y -= ny * overlap / 2;
+                                
+                                const tempVx = ring.vx;
+                                const tempVy = ring.vy;
+                                ring.vx = otherRing.vx * 0.8;
+                                ring.vy = otherRing.vy * 0.8;
+                                otherRing.vx = tempVx * 0.8;
+                                otherRing.vy = tempVy * 0.8;
+                                
+                                
+                            }
+                        }
+                    });
+                    
+                    ring.element.style.left = ring.x + 'px';
+                    ring.element.style.top = ring.y + 'px';
+                    ring.element.style.transform = `rotate(${ring.rotation}deg) scale(${scale})`;
+                    ring.element.style.opacity = pulse;
+                    ring.element.style.boxShadow = `
+                        0 0 ${8 + Math.random() * 8}px rgba(255, 215, 0, ${0.6 + Math.random() * 0.4}),
+                        0 0 ${15 + Math.random() * 10}px rgba(255, 215, 0, ${0.3 + Math.random() * 0.2}),
+                        inset 0 0 5px rgba(255, 255, 255, ${0.2 + Math.random() * 0.2})
+                    `;
+                });
+                
+                updateTriangle();
+                animationFrame = requestAnimationFrame(updateRings);
+            }
+            
+            initRings();
+            initTriangle();
+            updateRings();
+            
+            restoreBtn.onclick = function(){
+                if(isProcessing) return;
+                isProcessing = true;
+                
+                restoreProgress.style.width = '0%';
+                restoreNum.textContent = '0%';
+                restoreComplete.style.display = 'none';
+                restoreBtn.disabled = true;
+                restoreBtn.textContent = '恢复中...';
+                
+                const duration = 20000;
+                const startTime = Date.now();
+                const totalDuration = duration;
+                
+                function updateProgress(){
+                    if(!isProcessing) return;
+                    
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(100, (elapsed / totalDuration) * 100);
+                    
+                    restoreProgress.style.width = progress + '%';
+                    restoreNum.textContent = Math.round(progress) + '%';
+                    
+                    if(progress >= 100){
+                        restoreComplete.style.display = 'block';
+                        restoreBtn.disabled = false;
+                        restoreBtn.textContent = '恢复应用';
+                        isProcessing = false;
+                    } else {
+                        requestAnimationFrame(updateProgress);
+                    }
+                }
+                
+                requestAnimationFrame(updateProgress);
+            };
+        }
+
+        initCleanMemory();
+        initVirusScan();
+        initPermission();
+        initBattery();
+        initRestore();
+        initPayProtect();
+        initPermissions();
+        createStars();
+    </script>
+</body>
+</html>
