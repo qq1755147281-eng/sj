@@ -234,6 +234,95 @@
             background: rgba(0,255,136,0.1);
         }
 
+        .color-square-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0 14px 0;
+            flex-wrap: nowrap;
+        }
+        .color-square {
+            width: 34px;
+            height: 34px;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 7px;
+            cursor: pointer;
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.55), inset 0 0 8px rgba(255,255,255,0.18);
+            transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+            filter: saturate(0.85) brightness(0.95);
+        }
+        .color-square:hover {
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 5px 16px rgba(255,255,255,0.4), inset 0 0 10px rgba(255,255,255,0.35);
+            filter: saturate(1) brightness(1.05);
+        }
+        .color-square:active {
+            transform: scale(0.92);
+        }
+        .color-square.flash {
+            animation: colorFlash 0.4s ease;
+        }
+        @keyframes colorFlash {
+            0% { filter: brightness(1.5) saturate(1.4); box-shadow: 0 0 24px currentColor; }
+            100% { filter: saturate(0.85) brightness(0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.55), inset 0 0 8px rgba(255,255,255,0.18); }
+        }
+        .verify-quota-btn {
+            display: inline-block;
+            padding: 9px 26px;
+            margin: 6px 0 18px 0;
+            border: 1px solid rgba(255,215,0,0.7);
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(40,30,0,0.6), rgba(20,15,0,0.85));
+            color: #ffd700;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: not-allowed;
+            opacity: 0.5;
+            text-shadow: 0 0 8px rgba(255,215,0,0.5);
+            box-shadow: 0 0 12px rgba(255,215,0,0.2), inset 0 0 8px rgba(255,215,0,0.15);
+            transition: all 0.3s;
+        }
+        .verify-quota-btn.ready {
+            cursor: pointer;
+            opacity: 1;
+            background: linear-gradient(145deg, rgba(80,60,0,0.7), rgba(40,30,0,0.9));
+            box-shadow: 0 0 22px rgba(255,215,0,0.55), inset 0 0 12px rgba(255,215,0,0.3);
+            animation: goldPulse 1.4s ease-in-out infinite;
+        }
+        .verify-quota-btn.ready:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 28px rgba(255,215,0,0.75), inset 0 0 14px rgba(255,215,0,0.4);
+        }
+        @keyframes goldPulse {
+            0%, 100% { box-shadow: 0 0 22px rgba(255,215,0,0.55), inset 0 0 12px rgba(255,215,0,0.3); }
+            50% { box-shadow: 0 0 32px rgba(255,215,0,0.85), inset 0 0 16px rgba(255,215,0,0.5); }
+        }
+        .quota-status {
+            font-size: 0.82rem;
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            min-height: 1.2em;
+        }
+        .quota-status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+            margin: 0 3px;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+        }
+        .quota-status .dot.active {
+            background: #ffd700;
+            box-shadow: 0 0 8px #ffd700;
+            transform: scale(1.25);
+        }
+
         .back-btn {
             padding: 12px 30px;
             border: 1px solid #64c8ff;
@@ -2585,10 +2674,22 @@
                 <button class="pay-btn" onclick="openAlipay()">支付宝支付</button>
                 <button class="pay-btn" onclick="openBank()">银行卡支付</button>
             </div>
-            <div class="verify-group">
-                <input type="text" class="verify-input" id="verifyCode" placeholder="请输入验证密码">
-                <button class="verify-btn" onclick="checkVerify()">验证额度</button>
+            <div class="color-square-group">
+                <button class="color-square" style="background:#e74c3c" onclick="colorClick('red')" title="赤"></button>
+                <button class="color-square" style="background:#ff8c00" onclick="colorClick('orange')" title="橙"></button>
+                <button class="color-square" style="background:#ffd700" onclick="colorClick('yellow')" title="黄"></button>
+                <button class="color-square" style="background:#2ecc71" onclick="colorClick('green')" title="绿"></button>
+                <button class="color-square" style="background:#1abc9c" onclick="colorClick('cyan')" title="青"></button>
+                <button class="color-square" style="background:#3498db" onclick="colorClick('blue')" title="蓝"></button>
+                <button class="color-square" style="background:#9b59b6" onclick="colorClick('purple')" title="紫"></button>
             </div>
+            <div class="quota-status" id="quotaStatus">
+                <span class="dot" id="dot0"></span>
+                <span class="dot" id="dot1"></span>
+                <span class="dot" id="dot2"></span>
+                <span class="dot" id="dot3"></span>
+            </div>
+            <button class="verify-quota-btn" id="verifyQuotaBtn" onclick="doQuotaVerify()">额度验证</button>
             <button class="back-btn" onclick="playButtonSound('click'); switchPage('page0')">返回安全中心</button>
         </div>
     </div>
@@ -2991,9 +3092,7 @@
                 <div class="unlock-dot dot-yellow" id="dotYellow" onclick="checkDot(3)"></div>
             </div>
             <h2 class="login-title">VIP授权登录</h2>
-            <input type="text" class="form-input" id="username" placeholder="请输入VIP账号">
-            <input type="password" class="form-input" id="password" placeholder="请输入VIP密码">
-            <div class="password-hint">提示密码：北坎为水</div>
+            <input type="password" class="form-input" id="password" placeholder="请输入6位数字密码" maxlength="6">
             <button class="login-btn" onclick="playButtonSound('click'); doLogin()">登录</button>
             <div class="error-message" id="errorMsg"></div>
         </div>
@@ -3105,7 +3204,7 @@
         }
 
         const USER = 'wgb';
-        const PWD = '20260606';
+        const PWD = '314159';
         const RIGHT_CODE = '202620262026';
         let vipNum = 0;
 
@@ -3118,13 +3217,12 @@
         }
 
         function doLogin() {
-            let u = document.getElementById('username').value.trim();
             let p = document.getElementById('password').value.trim();
-            if(u === USER && p === PWD) {
+            if(p === PWD) {
                 document.getElementById('loginOverlay').classList.add('hidden');
                 document.getElementById('starsContainer').style.filter = 'blur(0)';
             } else {
-                document.getElementById('errorMsg').innerText = '账号或密码错误';
+                document.getElementById('errorMsg').innerText = '密码错误';
             }
         }
 
@@ -3206,6 +3304,87 @@
         function openWx(){ document.getElementById('wxModal').classList.add('open'); }
         function openAlipay(){ document.getElementById('aliModal').classList.add('open'); }
         function openBank(){ document.getElementById('bankModal').classList.add('open'); }
+
+        // 颜色按钮验证额度逻辑：黄黄黄橙
+        let colorSequence = [];
+        const TARGET_SEQUENCE = ['yellow', 'yellow', 'yellow', 'orange'];
+        const COLOR_MAP = {
+            red:    document.querySelector('.color-square[onclick*="red"]'),
+            orange: document.querySelector('.color-square[onclick*="orange"]'),
+            yellow: document.querySelector('.color-square[onclick*="yellow"]'),
+            green:  document.querySelector('.color-square[onclick*="green"]'),
+            cyan:   document.querySelector('.color-square[onclick*="cyan"]'),
+            blue:   document.querySelector('.color-square[onclick*="blue"]'),
+            purple: document.querySelector('.color-square[onclick*="purple"]')
+        };
+
+        function updateQuotaDots() {
+            for (let i = 0; i < 4; i++) {
+                const d = document.getElementById('dot' + i);
+                if (d) d.classList.toggle('active', i < colorSequence.length);
+            }
+            const btn = document.getElementById('verifyQuotaBtn');
+            if (colorSequence.length === 4) {
+                btn.classList.add('ready');
+            } else {
+                btn.classList.remove('ready');
+            }
+        }
+
+        function colorClick(color) {
+            const btn = COLOR_MAP[color];
+            if (btn) {
+                btn.classList.remove('flash');
+                void btn.offsetWidth;
+                btn.classList.add('flash');
+            }
+            playButtonSound('click');
+
+            // 序列前缀匹配：只在期望位置上接受当前颜色
+            const expected = TARGET_SEQUENCE[colorSequence.length];
+            if (color === expected) {
+                colorSequence.push(color);
+            } else {
+                // 点错颜色：若当前颜色是序列首位则重置为该项，否则直接清空
+                if (color === TARGET_SEQUENCE[0]) {
+                    colorSequence = [color];
+                } else {
+                    colorSequence = [];
+                }
+            }
+            updateQuotaDots();
+        }
+
+        function doQuotaVerify() {
+            const btn = document.getElementById('verifyQuotaBtn');
+            if (!btn.classList.contains('ready')) {
+                showToast('请按 黄黄黄橙 顺序点亮四格', 'fail');
+                return;
+            }
+            // 校验完整序列
+            const match = colorSequence.length === TARGET_SEQUENCE.length &&
+                          colorSequence.every((c, i) => c === TARGET_SEQUENCE[i]);
+            if (match) {
+                vipNum++;
+                const numEl = document.getElementById('num');
+                if (numEl) numEl.innerText = vipNum;
+                playButtonSound('success');
+                showToast('✓ 额度验证成功，VIP 额度 +1', 'success');
+                // 状态短暂全亮后清空
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById('dot' + i).classList.add('active');
+                }
+                setTimeout(() => {
+                    colorSequence = [];
+                    updateQuotaDots();
+                }, 900);
+            } else {
+                playButtonSound('error');
+                showToast('验证失败，请重试', 'fail');
+                colorSequence = [];
+                updateQuotaDots();
+            }
+        }
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
                 const btn = event.target;
